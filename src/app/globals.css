@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+:root {
+  /* Core Amazon-Inspired Palette */
+  --color-primary: #f08804;
+  --color-primary-hover: #d97706;
+  --color-primary-active: #b45309;
+  --color-primary-foreground: #0f1111;
+
+  --color-navy: #131921;
+  --color-navy-hover: #1f2937;
+  --color-navy-light: #232f3e;
+  --color-navy-foreground: #ffffff;
+
+  --color-background: #f8f9fa;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f3f4f6;
+  --color-surface-hover: #e5e7eb;
+
+  --color-foreground: #0f1111;
+  --color-foreground-secondary: #374151;
+  --color-muted: #565959;
+  --color-muted-foreground: #6b7280;
+
+  --color-border: #d5d9d9;
+  --color-border-subtle: #e5e7eb;
+  --color-border-strong: #9ca3af;
+  --color-ring: #f08804;
+
+  --color-success: #067d62;
+  --color-success-bg: #ecfdf5;
+  --color-success-border: #a7f3d0;
+
+  --color-warning: #b45309;
+  --color-warning-bg: #fffbeb;
+  --color-warning-border: #fde68a;
+
+  --color-danger: #c41c1c;
+  --color-danger-bg: #fef2f2;
+  --color-danger-border: #fecaca;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+}
+
+@theme {
+  --color-brand-primary: var(--color-primary);
+  --color-brand-primary-hover: var(--color-primary-hover);
+  --color-brand-primary-active: var(--color-primary-active);
+  --color-brand-primary-foreground: var(--color-primary-foreground);
+
+  --color-brand-navy: var(--color-navy);
+  --color-brand-navy-hover: var(--color-navy-hover);
+  --color-brand-navy-light: var(--color-navy-light);
+  --color-brand-navy-foreground: var(--color-navy-foreground);
+
+  --color-brand-bg: var(--color-background);
+  --color-brand-surface: var(--color-surface);
+  --color-brand-surface-subtle: var(--color-surface-subtle);
+  --color-brand-surface-hover: var(--color-surface-hover);
+
+  --color-brand-foreground: var(--color-foreground);
+  --color-brand-foreground-sec: var(--color-foreground-secondary);
+  --color-brand-muted: var(--color-muted);
+  --color-brand-muted-fg: var(--color-muted-foreground);
+
+  --color-brand-border: var(--color-border);
+  --color-brand-border-subtle: var(--color-border-subtle);
+  --color-brand-border-strong: var(--color-border-strong);
+  --color-brand-ring: var(--color-ring);
+
+  --color-brand-success: var(--color-success);
+  --color-brand-success-bg: var(--color-success-bg);
+  --color-brand-success-border: var(--color-success-border);
+
+  --color-brand-warning: var(--color-warning);
+  --color-brand-warning-bg: var(--color-warning-bg);
+  --color-brand-warning-border: var(--color-warning-border);
+
+  --color-brand-danger: var(--color-danger);
+  --color-brand-danger-bg: var(--color-danger-bg);
+  --color-brand-danger-border: var(--color-danger-border);
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Base resets & typography */
+html {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  scroll-behavior: smooth;
+  color: var(--color-foreground);
+  background-color: var(--color-background);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* Focus styles for keyboard accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 1px;
+}
