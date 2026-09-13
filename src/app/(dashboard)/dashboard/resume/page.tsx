@@ -42,8 +42,8 @@ export default function ResumesPage() {
   const [resumes, setResumes] = React.useState([
     {
       id: "res_invozone",
-      title: "Muhammad Ali - InvoZone Professional CV (Standard)",
-      fileName: "Muhammad_Ali_InvoZone_Professional_CV.pdf",
+      title: "Master CV — InvoZone Agency Standard (Verified)",
+      fileName: "InvoZone_Professional_Standard_CV.pdf",
       fileSize: 442658,
       fileType: "pdf" as const,
       isPrimary: true,
@@ -53,8 +53,8 @@ export default function ResumesPage() {
     },
     {
       id: "res_01",
-      title: "Full-Stack Developer & DevOps Specialist",
-      fileName: "Muhammad_Ali_DevOps_Engineer_2026.pdf",
+      title: "Full-Stack Engineer & Cloud Infrastructure Specialist",
+      fileName: "FullStack_Cloud_Engineer_Resume.pdf",
       fileSize: 198420,
       fileType: "pdf" as const,
       isPrimary: false,

@@ -16,6 +16,7 @@ import {
   ScanLine,
   X,
 } from "lucide-react";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -67,17 +68,7 @@ export function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
     >
       {/* Brand Header */}
       <div className="flex h-16 items-center justify-between border-b border-slate-100 px-5">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-xs">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <div className="flex items-center tracking-tight font-extrabold text-lg text-slate-900">
-            <span>HireBoost</span>
-            <span className="ml-1 px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200/60 text-[9px] font-black tracking-wider uppercase">
-              AI
-            </span>
-          </div>
-        </Link>
+        <BrandLogo size="sm" theme="light" href="/dashboard" badgeText="AI" />
         <div className="flex items-center gap-1">
           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
             PRO

@@ -74,7 +74,7 @@ export function DashboardHeader({ onToggleSidebar }: HeaderProps) {
 
   const meta = currentRoute
     ? routeTitles[currentRoute]
-    : { title: "Dashboard", subtitle: "HireBoost AI Assistant" };
+    : { title: "Dashboard", subtitle: "TalentForge AI Assistant" };
 
   return (
     <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/95 backdrop-blur-md px-4 sm:px-6">

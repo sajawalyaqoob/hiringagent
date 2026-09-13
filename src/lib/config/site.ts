@@ -1,20 +1,20 @@
 export const siteConfig = {
-  name: "HireBoost AI",
-  shortName: "HireBoost",
-  tagline: "Turn Every Job Opportunity Into Your Best Application",
+  name: "TalentForge AI",
+  shortName: "TalentForge",
+  tagline: "Autonomous Career Architecture & InvoZone-Standard Application Suite",
   description:
-    "An AI-powered job-search and job-application assistant that analyzes your professional experience, matches your skills to market opportunities, and generates tailored applications.",
-  url: process.env.NEXT_PUBLIC_APP_URL || "https://hireboost.ai",
-  ogImage: "https://hireboost.ai/og-image.png",
+    "An AI-powered career agent that analyzes your professional experience, matches your skills to market opportunities, and generates InvoZone-standard applications.",
+  url: process.env.NEXT_PUBLIC_APP_URL || "https://talentforge.ai",
+  ogImage: "https://talentforge.ai/og-image.png",
   links: {
-    github: "https://github.com/hireboost-ai",
-    twitter: "https://twitter.com/hireboostai",
-    linkedin: "https://linkedin.com/company/hireboost-ai",
+    github: "https://github.com/sajawalyaqoob/hiringagent",
+    twitter: "https://twitter.com/talentforgeai",
+    linkedin: "https://linkedin.com/company/talentforge-ai",
   },
   contact: {
-    email: "support@hireboost.ai",
+    email: "support@talentforge.ai",
   },
-  creator: "HireBoost AI Architecture Team",
+  creator: "TalentForge AI Architecture Team",
 };
 
 export const navConfig = {

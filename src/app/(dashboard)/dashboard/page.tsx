@@ -266,17 +266,23 @@ export default function DashboardOverviewPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3.5">
-            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full ring-2 ring-indigo-500 shadow-sm bg-slate-100">
-              <img src={profile.avatarUrl || "/images/default-avatar.jpg"} alt={profile.fullName} className="h-full w-full object-cover" />
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full ring-2 ring-indigo-500 shadow-sm bg-slate-100 flex items-center justify-center">
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt={profile.fullName || "Candidate"} className="h-full w-full object-cover" />
+              ) : (
+                <User className="h-7 w-7 text-slate-400" />
+              )}
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900">{profile.fullName}</h2>
-              <p className="text-xs font-bold text-indigo-600">{profile.professionalHeadline || userRole}</p>
+              <h2 className="text-lg font-black text-slate-900">{profile.fullName || userName || "Candidate Profile"}</h2>
+              <p className="text-xs font-bold text-indigo-600">{profile.professionalHeadline || userRole || "Professional Candidate"}</p>
               <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 mt-0.5">
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3 text-slate-400" />
-                  {profile.location || "Lahore, Pakistan"}
-                </span>
+                {profile.location && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3 text-slate-400" />
+                    {profile.location}
+                  </span>
+                )}
                 {profile.phone && (
                   <span className="flex items-center gap-1">
                     <Phone className="h-3 w-3 text-slate-400" />
@@ -300,9 +306,9 @@ export default function DashboardOverviewPage() {
               </Button>
             </Link>
             <Link href="/dashboard/create">
-              <Button variant="primary" size="sm" className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 gap-1">
+              <Button variant="primary" size="sm" className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white gap-1">
                 <Printer className="h-3.5 w-3.5" />
-                Print / Save PDF
+                InvoZone CV Studio
               </Button>
             </Link>
           </div>
@@ -315,8 +321,14 @@ export default function DashboardOverviewPage() {
               <GraduationCap className="h-3.5 w-3.5 text-indigo-600" />
               Education
             </span>
-            <p className="font-bold text-slate-900">{educationList[0]?.degree || "BS Computer Science (BSCS)"}</p>
-            <p className="text-slate-500 text-[11px]">{educationList[0]?.institution || "NCBA&E"} ({educationList[0]?.startDate || "2021"} – {educationList[0]?.endDate || "2025"})</p>
+            {educationList.length > 0 ? (
+              <>
+                <p className="font-bold text-slate-900">{educationList[0].degree}</p>
+                <p className="text-slate-500 text-[11px]">{educationList[0].institution} {educationList[0].endDate ? `(${educationList[0].endDate})` : ""}</p>
+              </>
+            ) : (
+              <p className="text-slate-400 text-[11px] italic">No education added yet. Click &quot;Edit Details&quot; to add.</p>
+            )}
           </div>
 
           <div className="space-y-1.5 rounded-xl border border-slate-100 bg-slate-50/50 p-3.5">
@@ -324,8 +336,14 @@ export default function DashboardOverviewPage() {
               <Briefcase className="h-3.5 w-3.5 text-emerald-600" />
               Recent Experience
             </span>
-            <p className="font-bold text-slate-900">{experienceList[0]?.jobTitle || "MERN Stack Developer Intern"}</p>
-            <p className="text-slate-500 text-[11px]">{experienceList[0]?.company || "UET Incubation Center"} • <strong className="text-emerald-700">{experienceList[0]?.duration || "(3 Months)"}</strong></p>
+            {experienceList.length > 0 ? (
+              <>
+                <p className="font-bold text-slate-900">{experienceList[0].jobTitle}</p>
+                <p className="text-slate-500 text-[11px]">{experienceList[0].company} • <strong className="text-emerald-700">{experienceList[0].duration || "(Current)"}</strong></p>
+              </>
+            ) : (
+              <p className="text-slate-400 text-[11px] italic">No experience added yet. Click &quot;Edit Details&quot; to add.</p>
+            )}
           </div>
 
           <div className="space-y-1.5 rounded-xl border border-slate-100 bg-slate-50/50 p-3.5">
@@ -333,8 +351,14 @@ export default function DashboardOverviewPage() {
               <FolderGit2 className="h-3.5 w-3.5 text-violet-600" />
               Key Project
             </span>
-            <p className="font-bold text-slate-900">{projectList[0]?.name || "234Deals Marketplace Platform"}</p>
-            <p className="text-slate-500 text-[11px] truncate">{projectList[0]?.projectUrl || "https://234deals.com"}</p>
+            {projectList.length > 0 ? (
+              <>
+                <p className="font-bold text-slate-900">{projectList[0].name}</p>
+                <p className="text-slate-500 text-[11px] truncate">{projectList[0].projectUrl || projectList[0].githubUrl || "Live application"}</p>
+              </>
+            ) : (
+              <p className="text-slate-400 text-[11px] italic">No projects added yet. Click &quot;Edit Details&quot; to add.</p>
+            )}
           </div>
         </div>
       </div>

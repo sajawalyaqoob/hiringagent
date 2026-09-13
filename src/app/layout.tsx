@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HireBoost AI — Turn Every Job Opportunity Into Your Best Application",
-  description: "AI-powered job-search and job-application assistant with ATS scoring and deterministic compatibility.",
+  title: "TalentForge AI — Autonomous Career Architecture & InvoZone-Standard Applications",
+  description: "AI-powered career agent that analyzes your professional experience, matches your skills to market opportunities, and generates InvoZone-standard applications.",
 };
 
 export default function RootLayout({

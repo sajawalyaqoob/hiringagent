@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { navConfig, siteConfig } from "@/lib/config/site";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ArrowRight, Sparkles } from "lucide-react";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 
 export function MarketingNavbar() {
   const pathname = usePathname();
@@ -16,17 +17,7 @@ export function MarketingNavbar() {
       <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand Logo */}
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-sm shadow-indigo-500/30 group-hover:scale-105 transition-transform">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <div className="flex items-center tracking-tight font-extrabold text-xl text-slate-900">
-              <span>HireBoost</span>
-              <span className="ml-1.5 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200/60 text-[10px] font-black tracking-wider uppercase">
-                AI
-              </span>
-            </div>
-          </Link>
+          <BrandLogo size="md" theme="light" href="/" badgeText="AI" />
 
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-1">
