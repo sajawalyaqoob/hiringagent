@@ -453,6 +453,11 @@ export class ProfileService {
   async saveOnboarding(data: {
     fullName?: string;
     email?: string;
+    phone?: string;
+    location?: string;
+    linkedInUrl?: string;
+    githubUrl?: string;
+    portfolioUrl?: string;
     careerField?: string;
     targetRole?: string;
     workplacePreference?: string;
@@ -462,9 +467,44 @@ export class ProfileService {
     skills?: string[];
     avatarUrl?: string;
     bio?: string;
+    education?: Array<{
+      degree: string;
+      institution: string;
+      fieldOfStudy?: string;
+      startDate?: string;
+      endDate?: string;
+      gpa?: string;
+    }>;
+    experiences?: Array<{
+      company: string;
+      jobTitle: string;
+      location?: string;
+      duration?: string;
+      startDate?: string;
+      endDate?: string;
+      isCurrent?: boolean;
+      responsibilities?: string[];
+      technologiesUsed?: string[];
+    }>;
+    projects?: Array<{
+      name: string;
+      role?: string;
+      description?: string;
+      projectUrl?: string;
+      githubUrl?: string;
+      technologies?: string[];
+      responsibilities?: string[];
+    }>;
+    categorizedSkills?: Record<string, string[]>;
   }): Promise<FullProfileData> {
     if (data.fullName) mockProfile.fullName = data.fullName;
     if (data.email) mockProfile.email = data.email;
+    if (data.phone) mockProfile.phone = data.phone;
+    if (data.location) mockProfile.location = data.location;
+    if (data.linkedInUrl) mockProfile.linkedInUrl = data.linkedInUrl;
+    if (data.githubUrl) mockProfile.githubUrl = data.githubUrl;
+    if (data.portfolioUrl) mockProfile.portfolioUrl = data.portfolioUrl;
+
     if (data.targetRole) {
       mockProfile.currentJobTitle = data.targetRole;
       mockProfile.professionalHeadline = `${data.targetRole} • ${data.careerField || "Tech Specialist"}`;
@@ -489,9 +529,82 @@ export class ProfileService {
       mockJobPreferences.minimumSalary = data.minSalary;
       mockJobPreferences.targetSalary = Math.round(data.minSalary * 1.2);
     }
+
+    // Process Education Entries
+    if (data.education && Array.isArray(data.education) && data.education.length > 0) {
+      mockEducation.length = 0;
+      data.education.forEach((edu, idx) => {
+        mockEducation.push({
+          id: `edu_${Date.now()}_${idx}`,
+          profileId: mockProfile.id,
+          degree: edu.degree,
+          institution: edu.institution,
+          fieldOfStudy: edu.fieldOfStudy || edu.degree,
+          startDate: edu.startDate || "2021",
+          endDate: edu.endDate || "2025",
+          gpa: edu.gpa || undefined,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      });
+    }
+
+    // Process Work Experiences Entries (with explicit time periods)
+    if (data.experiences && Array.isArray(data.experiences) && data.experiences.length > 0) {
+      mockExperiences.length = 0;
+      data.experiences.forEach((exp, idx) => {
+        mockExperiences.push({
+          id: `exp_${Date.now()}_${idx}`,
+          profileId: mockProfile.id,
+          company: exp.company,
+          jobTitle: exp.jobTitle,
+          location: exp.location || mockProfile.location || "Remote",
+          isRemote: true,
+          employmentType: "full_time",
+          startDate: exp.startDate || (exp.duration ? exp.duration : "2023"),
+          endDate: exp.endDate || (exp.isCurrent ? undefined : "Present"),
+          isCurrent: exp.isCurrent ?? false,
+          responsibilities: exp.responsibilities && exp.responsibilities.length > 0
+            ? exp.responsibilities
+            : [
+                `Developed and maintained features for ${exp.company}.`,
+                "Worked on client deliverables, automated tests, and production deployments.",
+              ],
+          achievements: [],
+          technologiesUsed: exp.technologiesUsed || data.skills?.slice(0, 5) || ["TypeScript", "Next.js"],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      });
+    }
+
+    // Process Notable Projects Entries
+    if (data.projects && Array.isArray(data.projects) && data.projects.length > 0) {
+      mockProjects.length = 0;
+      data.projects.forEach((proj, idx) => {
+        mockProjects.push({
+          id: `prj_${Date.now()}_${idx}`,
+          profileId: mockProfile.id,
+          name: proj.name,
+          role: proj.role || mockProfile.currentJobTitle || "Full Stack Developer",
+          description: proj.description || `${proj.name} production software system.`,
+          technologies: proj.technologies || data.skills?.slice(0, 4) || ["React", "Node.js"],
+          responsibilities: proj.responsibilities || [
+            `Designed, developed, and deployed the complete ${proj.name} architecture.`,
+            "Implemented authentication, security controls, and responsive UI.",
+          ],
+          achievements: [],
+          projectUrl: proj.projectUrl,
+          githubUrl: proj.githubUrl,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      });
+    }
+
+    // Process Skills (Categorized & Flat)
     if (data.skills && data.skills.length > 0) {
       mockJobPreferences.preferredTechnologies = data.skills;
-      // Add skills to mockSkills
       for (const sk of data.skills) {
         const exists = mockSkills.some((s) => s.name.toLowerCase() === sk.toLowerCase());
         if (!exists) {
@@ -499,8 +612,8 @@ export class ProfileService {
             id: `skl_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
             profileId: mockProfile.id,
             name: sk,
-            category: "Technical",
-            proficiencyLevel: "proficient",
+            category: "frameworks",
+            proficiencyLevel: "professional_experience",
             yearsOfExperience: 3,
             verifiedViaInterview: true,
             createdAt: new Date().toISOString(),
@@ -510,7 +623,20 @@ export class ProfileService {
       }
     }
 
+    // Update completion percentage
+    const completion = ProfileService.calculateCompletion({
+      profile: mockProfile,
+      experiences: mockExperiences,
+      education: mockEducation,
+      skills: mockSkills,
+      projects: mockProjects,
+      certifications: mockCertifications,
+      languages: mockLanguages,
+      jobPreferences: mockJobPreferences,
+    });
+    mockProfile.completionPercentage = completion.percentage;
     mockProfile.updatedAt = new Date().toISOString();
+
     return this.getFullProfile();
   }
 }

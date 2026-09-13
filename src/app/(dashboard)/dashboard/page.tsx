@@ -4,52 +4,71 @@ import * as React from "react";
 import Link from "next/link";
 import {
   Briefcase,
-  Layers,
+  FileText,
   Sparkles,
   ArrowRight,
-  Calendar,
-  ChevronRight,
+  GraduationCap,
+  FolderGit2,
+  CheckCircle2,
+  Search,
+  HelpCircle,
+  Clock,
+  Globe,
+  Printer,
   ExternalLink,
   ShieldCheck,
-  CheckCircle2,
-  TrendingUp,
-  Search,
+  Phone,
+  Mail,
+  GitBranch,
+  ChevronRight,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Modal } from "@/components/ui/modal";
 
 export default function DashboardOverviewPage() {
   const [userName, setUserName] = React.useState("Candidate");
-  const [userRole, setUserRole] = React.useState("Software Engineer");
-  const [profileCompletion, setProfileCompletion] = React.useState(88);
-  const [matchingCount, setMatchingCount] = React.useState(14);
-  const [applicationsCount, setApplicationsCount] = React.useState(5);
-  const [interviewsCount, setInterviewsCount] = React.useState(2);
+  const [userRole, setUserRole] = React.useState("Full Stack Developer");
+  const [matchingCount, setMatchingCount] = React.useState(250);
   const [recentMatches, setRecentMatches] = React.useState<any[]>([]);
-  const [recentApplications, setRecentApplications] = React.useState<any[]>([]);
+  const [guideModalOpen, setGuideModalOpen] = React.useState(false);
+
+  // Full candidate data
+  const [profile, setProfile] = React.useState<any>({
+    fullName: "Muhammad Ali",
+    professionalHeadline: "BS Computer Science Student | Full Stack Developer | DevOps Enthusiast",
+    email: "aliofficialpk63@gmail.com",
+    phone: "03020048966",
+    location: "Lahore, Pakistan",
+    githubUrl: "github.com/aliofficialpk",
+    avatarUrl: "/images/default-avatar.jpg",
+  });
+  const [educationList, setEducationList] = React.useState<any[]>([]);
+  const [experienceList, setExperienceList] = React.useState<any[]>([]);
+  const [projectList, setProjectList] = React.useState<any[]>([]);
+  const [skillsList, setSkillsList] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     async function loadDashboardData() {
       try {
-        const [profRes, jobsRes, appsRes] = await Promise.all([
+        const [profRes, jobsRes] = await Promise.all([
           fetch("/api/profile").then((r) => r.json()).catch(() => null),
           fetch("/api/jobs").then((r) => r.json()).catch(() => null),
-          fetch("/api/applications").then((r) => r.json()).catch(() => null),
         ]);
 
-        if (profRes?.success && profRes.data?.profile) {
+        if (profRes?.success && profRes.data) {
           const p = profRes.data.profile;
-          if (p.fullName) {
-            setUserName(p.fullName.split(" ")[0]);
+          if (p) {
+            setProfile(p);
+            if (p.fullName) setUserName(p.fullName.split(" ")[0]);
+            if (p.currentJobTitle) setUserRole(p.currentJobTitle);
           }
-          if (p.currentJobTitle) {
-            setUserRole(p.currentJobTitle);
-          }
-          if (profRes.data.completion) {
-            setProfileCompletion(profRes.data.completion.percentage);
-          }
+          if (profRes.data.education) setEducationList(profRes.data.education);
+          if (profRes.data.experiences) setExperienceList(profRes.data.experiences);
+          if (profRes.data.projects) setProjectList(profRes.data.projects);
+          if (profRes.data.skills) setSkillsList(profRes.data.skills.map((s: any) => s.name));
         }
 
         if (jobsRes?.success && Array.isArray(jobsRes.data)) {
@@ -60,31 +79,12 @@ export default function DashboardOverviewPage() {
               title: item.job.title,
               company: item.job.company,
               location: item.job.location,
-              matchScore: item.match?.overallScore || 90,
+              matchScore: item.match?.overallScore || 92,
               salary: item.job.salaryMin
-                ? `$${item.job.salaryMin.toLocaleString()} - $${item.job.salaryMax?.toLocaleString()}`
+                ? `$${item.job.salaryMin.toLocaleString()} - $${(item.job.salaryMax || item.job.salaryMin * 1.3).toLocaleString()}`
                 : "Market Competitive",
               skills: item.job.requiredSkills || [],
-              missing: item.match?.missingSkills || [],
-              posted: item.job.postedAt ? item.job.postedAt.split("T")[0] : "Recently",
-            }))
-          );
-        }
-
-        if (appsRes?.success && Array.isArray(appsRes.data)) {
-          setApplicationsCount(appsRes.data.length);
-          const interviews = appsRes.data.filter((a: any) => a.status === "interview" || a.status === "screening");
-          setInterviewsCount(interviews.length);
-          setRecentApplications(
-            appsRes.data.slice(0, 3).map((app: any) => ({
-              id: app.id,
-              jobTitle: app.jobTitle,
-              company: app.company,
-              status: app.status,
-              stageBadge: app.status.replace("_", " ").toUpperCase(),
-              badgeVariant: app.status === "interview" ? "success" : app.status === "offer" ? "success" : "info",
-              nextAction: app.nextAction || "Follow up on application status",
-              dueDate: app.nextActionDueDate || "Pending",
+              sourceUrl: item.job.sourceUrl,
             }))
           );
         }
@@ -96,42 +96,14 @@ export default function DashboardOverviewPage() {
     loadDashboardData();
   }, []);
 
-  const kpis = [
-    {
-      title: "Job Matches",
-      value: matchingCount.toString(),
-      change: "+4 new today",
-      icon: Briefcase,
-      iconBg: "bg-indigo-50 text-indigo-600",
-    },
-    {
-      title: "Applications Sent",
-      value: applicationsCount.toString(),
-      change: "5 active submissions",
-      icon: Layers,
-      iconBg: "bg-blue-50 text-blue-600",
-    },
-    {
-      title: "Interviews Active",
-      value: interviewsCount.toString(),
-      change: "In interview round",
-      icon: Calendar,
-      iconBg: "bg-emerald-50 text-emerald-600",
-    },
-    {
-      title: "Avg Match Score",
-      value: "92%",
-      change: "Top 5% candidate fit",
-      icon: TrendingUp,
-      iconBg: "bg-amber-50 text-amber-600",
-    },
-  ];
+  const linkedInUrl = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(userRole)}&location=${encodeURIComponent(profile.location || "Remote")}`;
+  const googleJobsUrl = `https://www.google.com/search?q=jobs+${encodeURIComponent(userRole)}+${encodeURIComponent(profile.location || "Remote")}&ibp=htl;jobs`;
 
   return (
     <div className="space-y-6">
-      {/* 1. Welcome & Action Header */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xs">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      {/* 1. Welcome Header & Guidance CTA */}
+      <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-r from-white via-indigo-50/20 to-white p-5 sm:p-6 shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
@@ -139,216 +111,348 @@ export default function DashboardOverviewPage() {
               </h1>
               <Badge variant="success" className="gap-1 font-semibold">
                 <CheckCircle2 className="h-3 w-3" />
-                Profile Active
+                InvoZone Standard Active
               </Badge>
             </div>
-            <p className="text-sm text-slate-500 max-w-2xl leading-relaxed">
-              Here is your current career progress as <span className="font-semibold text-slate-800">{userRole}</span>. You have{" "}
-              <span className="font-semibold text-slate-800">{matchingCount} live positions</span> calibrated to your skills.
+            <p className="text-xs sm:text-sm text-slate-500 max-w-2xl leading-relaxed">
+              Your profile is calibrated as <strong className="text-slate-800 font-semibold">{userRole}</strong>.
+              You have <strong className="text-indigo-600 font-bold">{matchingCount} live positions</strong> ready for direct application.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 pt-1 lg:pt-0">
-            <Link href="/dashboard/create" className="w-full sm:w-auto">
-              <Button variant="primary" size="md" className="w-full sm:w-auto font-bold shadow-sm">
-                <Sparkles className="h-4 w-4 mr-1.5" />
-                Create Tailored Resume
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setGuideModalOpen(true)}
+              className="rounded-xl border-indigo-200 text-xs font-semibold text-indigo-700 bg-indigo-50/50 hover:bg-indigo-100"
+            >
+              <HelpCircle className="h-3.5 w-3.5 mr-1 text-indigo-600" />
+              💡 Guided Walkthrough
+            </Button>
+
+            <Link href="/dashboard/create">
+              <Button variant="primary" size="sm" className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 shadow-sm">
+                <FileText className="h-3.5 w-3.5 mr-1" />
+                View & Print InvoZone CV
               </Button>
             </Link>
-
-            <Link href="/dashboard/jobs" className="w-full sm:w-auto">
-              <Button variant="outline" size="md" className="w-full sm:w-auto font-semibold">
-                <Search className="h-4 w-4 mr-1.5 text-slate-500" />
-                Explore Matches
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        {/* Profile Completion Indicator */}
-        <div className="mt-6 pt-5 border-t border-slate-100">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs font-semibold text-slate-700 mb-2 gap-1">
-            <div className="flex items-center gap-2">
-              <span>Career Profile Completeness</span>
-              <span className="text-indigo-600 font-bold">({profileCompletion}%)</span>
-            </div>
-            <Link href="/dashboard/profile" className="text-indigo-600 hover:text-indigo-700 font-bold flex items-center">
-              Complete remaining details <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
-            </Link>
-          </div>
-          <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-indigo-600 to-emerald-500 rounded-full transition-all duration-500"
-              style={{ width: `${profileCompletion}%` }}
-            />
           </div>
         </div>
       </div>
 
-      {/* 2. KPI Metrics Grid (Fully Responsive: 2 cols on mobile, 4 on desktop) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-        {kpis.map((kpi, idx) => {
-          const IconComponent = kpi.icon;
-          return (
-            <Card key={idx} className="p-4 sm:p-5">
-              <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider truncate">
-                  {kpi.title}
-                </span>
-                <div className={`p-2 rounded-xl ${kpi.iconBg} shrink-0`}>
-                  <IconComponent className="h-4 w-4" />
-                </div>
+      {/* 2. Three Clean, High-Value Core Cards (Decluttered UI) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+        {/* Card 1: InvoZone-Standard CV Status */}
+        <Card className="hover:border-indigo-300 transition-all p-5 shadow-xs flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600">
+                Professional Resume
+              </span>
+              <div className="h-8 w-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <FileText className="h-4 w-4" />
               </div>
-              <div className="space-y-1">
-                <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                  {kpi.value}
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">InvoZone-Standard CV</h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Complete with photo, education, experiences with exact time periods, and project links.
+              </p>
+            </div>
+            <div className="space-y-1 text-xs text-slate-600 pt-1 border-t border-slate-100">
+              <div className="flex items-center gap-1.5 font-medium">
+                <GraduationCap className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                <span className="truncate">{educationList[0]?.degree || "BS Computer Science (BSCS)"}</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-medium">
+                <Clock className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                <span className="truncate">{experienceList[0]?.company || "UET Incubation Center"} {experienceList[0]?.duration || "(3 Months)"}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 mt-2">
+            <Link href="/dashboard/create">
+              <Button variant="outline" size="sm" className="w-full rounded-xl text-xs font-semibold border-slate-200">
+                <Eye className="h-3.5 w-3.5 mr-1" />
+                Preview & Print PDF
+              </Button>
+            </Link>
+          </div>
+        </Card>
+
+        {/* Card 2: Live Job Matches & 1-Click Search */}
+        <Card className="hover:border-emerald-300 transition-all p-5 shadow-xs flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-600">
+                Dynamic Job Discovery
+              </span>
+              <div className="h-8 w-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <Briefcase className="h-4 w-4" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">{matchingCount} Live Tech Jobs</h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Real-time openings matched against your skills with direct 1-click external query buttons.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-1.5 pt-1 border-t border-slate-100">
+              <a
+                href={linkedInUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-lg bg-blue-50 border border-blue-200/80 px-2 py-1 text-[11px] font-bold text-[#0a66c2] hover:bg-blue-100"
+              >
+                <span>LinkedIn Jobs ↗</span>
+              </a>
+              <a
+                href={googleJobsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 border border-emerald-200/80 px-2 py-1 text-[11px] font-bold text-emerald-800 hover:bg-emerald-100"
+              >
+                <span>Google Jobs ↗</span>
+              </a>
+            </div>
+          </div>
+
+          <div className="pt-4 mt-2">
+            <Link href="/dashboard/jobs">
+              <Button variant="outline" size="sm" className="w-full rounded-xl text-xs font-semibold border-slate-200">
+                <Search className="h-3.5 w-3.5 mr-1" />
+                Browse All Matches
+              </Button>
+            </Link>
+          </div>
+        </Card>
+
+        {/* Card 3: AI Tailor Studio */}
+        <Card className="hover:border-violet-300 transition-all p-5 shadow-xs flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-violet-600">
+                AI Application Studio
+              </span>
+              <div className="h-8 w-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
+                <Sparkles className="h-4 w-4" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Instant AI Tailor</h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Generate customized cover letters, recruiter InMails, and tailored bullets for any company in seconds.
+              </p>
+            </div>
+            <div className="rounded-lg bg-violet-50/60 p-2.5 border border-violet-100 text-[11px] text-violet-800">
+              ⚡ Powered by Groq AI — zero hallucinations.
+            </div>
+          </div>
+
+          <div className="pt-4 mt-2">
+            <Link href="/dashboard/create">
+              <Button variant="primary" size="sm" className="w-full rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700">
+                <span>Open AI Studio</span>
+                <ArrowRight className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            </Link>
+          </div>
+        </Card>
+      </div>
+
+      {/* 3. Live Candidate Card Preview (InvoZone Agency Style) */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3.5">
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full ring-2 ring-indigo-500 shadow-sm bg-slate-100">
+              <img src={profile.avatarUrl || "/images/default-avatar.jpg"} alt={profile.fullName} className="h-full w-full object-cover" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-slate-900">{profile.fullName}</h2>
+              <p className="text-xs font-bold text-indigo-600">{profile.professionalHeadline || userRole}</p>
+              <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 mt-0.5">
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3 text-slate-400" />
+                  {profile.location || "Lahore, Pakistan"}
+                </span>
+                {profile.phone && (
+                  <span className="flex items-center gap-1">
+                    <Phone className="h-3 w-3 text-slate-400" />
+                    {profile.phone}
+                  </span>
+                )}
+                {profile.githubUrl && (
+                  <span className="flex items-center gap-1">
+                    <GitBranch className="h-3 w-3 text-slate-400" />
+                    {profile.githubUrl}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link href="/onboarding">
+              <Button variant="outline" size="sm" className="rounded-xl text-xs font-semibold border-slate-300">
+                Edit Details
+              </Button>
+            </Link>
+            <Link href="/dashboard/create">
+              <Button variant="primary" size="sm" className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 gap-1">
+                <Printer className="h-3.5 w-3.5" />
+                Print / Save PDF
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Detailed Credentials Snippet */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div className="space-y-1.5 rounded-xl border border-slate-100 bg-slate-50/50 p-3.5">
+            <span className="font-extrabold uppercase text-[10px] text-slate-400 flex items-center gap-1">
+              <GraduationCap className="h-3.5 w-3.5 text-indigo-600" />
+              Education
+            </span>
+            <p className="font-bold text-slate-900">{educationList[0]?.degree || "BS Computer Science (BSCS)"}</p>
+            <p className="text-slate-500 text-[11px]">{educationList[0]?.institution || "NCBA&E"} ({educationList[0]?.startDate || "2021"} – {educationList[0]?.endDate || "2025"})</p>
+          </div>
+
+          <div className="space-y-1.5 rounded-xl border border-slate-100 bg-slate-50/50 p-3.5">
+            <span className="font-extrabold uppercase text-[10px] text-slate-400 flex items-center gap-1">
+              <Briefcase className="h-3.5 w-3.5 text-emerald-600" />
+              Recent Experience
+            </span>
+            <p className="font-bold text-slate-900">{experienceList[0]?.jobTitle || "MERN Stack Developer Intern"}</p>
+            <p className="text-slate-500 text-[11px]">{experienceList[0]?.company || "UET Incubation Center"} • <strong className="text-emerald-700">{experienceList[0]?.duration || "(3 Months)"}</strong></p>
+          </div>
+
+          <div className="space-y-1.5 rounded-xl border border-slate-100 bg-slate-50/50 p-3.5">
+            <span className="font-extrabold uppercase text-[10px] text-slate-400 flex items-center gap-1">
+              <FolderGit2 className="h-3.5 w-3.5 text-violet-600" />
+              Key Project
+            </span>
+            <p className="font-bold text-slate-900">{projectList[0]?.name || "234Deals Marketplace Platform"}</p>
+            <p className="text-slate-500 text-[11px] truncate">{projectList[0]?.projectUrl || "https://234deals.com"}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Top Matched Opportunities List */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between text-xs text-slate-500">
+          <span className="font-bold text-slate-800">Top Recommended Matches for You</span>
+          <Link href="/dashboard/jobs" className="text-indigo-600 hover:text-indigo-700 font-bold flex items-center">
+            View all {matchingCount} live jobs <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {recentMatches.map((job) => (
+            <Card key={job.id} className="p-4 space-y-2.5 hover:border-indigo-300 transition-all">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 line-clamp-1">{job.title}</h4>
+                  <p className="text-[11px] text-indigo-600 font-semibold">{job.company} • {job.location}</p>
                 </div>
-                <div className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">
-                  {kpi.change}
-                </div>
+                <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[11px] font-black shrink-0">
+                  {job.matchScore}%
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {job.skills.slice(0, 3).map((sk: string) => (
+                  <span key={sk} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
+                    {sk}
+                  </span>
+                ))}
+              </div>
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-800 text-[11px]">{job.salary}</span>
+                {job.sourceUrl && (
+                  <a
+                    href={job.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 hover:text-indigo-700 font-bold text-[11px] flex items-center gap-0.5"
+                  >
+                    Direct Apply <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
               </div>
             </Card>
-          );
-        })}
-      </div>
-
-      {/* 3. Main Split Grid: Top Matches & Application Tracker */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Top Matched Jobs */}
-        <div className="lg:col-span-7 space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <div>
-                <CardTitle className="text-base font-bold text-slate-900">Recommended Job Matches</CardTitle>
-                <CardDescription className="text-xs text-slate-500">
-                  Roles scored against your verified skills & experience.
-                </CardDescription>
-              </div>
-              <Link href="/dashboard/jobs">
-                <Button variant="ghost" size="sm" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">
-                  View All ({matchingCount}) <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                </Button>
-              </Link>
-            </CardHeader>
-
-            <CardContent className="divide-y divide-slate-100 p-0">
-              {recentMatches.length > 0 ? (
-                recentMatches.map((item) => (
-                  <div key={item.id} className="p-4 sm:p-5 hover:bg-slate-50/60 transition-colors">
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5">
-                      <div>
-                        <Link
-                          href={`/dashboard/jobs/${item.id}`}
-                          className="font-bold text-slate-900 hover:text-indigo-600 transition-colors text-sm sm:text-base block"
-                        >
-                          {item.title}
-                        </Link>
-                        <div className="mt-1 text-xs text-slate-500 flex flex-wrap items-center gap-1.5">
-                          <span className="font-semibold text-slate-800">{item.company}</span>
-                          <span>•</span>
-                          <span>{item.location}</span>
-                          <span>•</span>
-                          <span className="font-medium text-slate-700">{item.salary}</span>
-                        </div>
-                      </div>
-
-                      <div className="shrink-0">
-                        <Badge variant={item.matchScore >= 90 ? "success" : "warning"} size="md">
-                          {item.matchScore}% Match
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* Skill tags */}
-                    <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                      {item.skills.slice(0, 4).map((skill: string) => (
-                        <span
-                          key={skill}
-                          className="rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                      {item.skills.length > 4 && (
-                        <span className="text-xs text-slate-400 font-medium">
-                          +{item.skills.length - 4} more
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
-                      <span>Posted {item.posted}</span>
-                      <div className="flex items-center gap-3">
-                        <Link href={`/dashboard/jobs/${item.id}`}>
-                          <span className="font-semibold text-indigo-600 hover:underline flex items-center">
-                            View Details <ExternalLink className="h-3 w-3 ml-1" />
-                          </span>
-                        </Link>
-                        <Link href={`/dashboard/create`}>
-                          <Button variant="primary" size="sm" className="h-7 px-2.5 text-xs">
-                            Tailor Resume
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-8 text-center text-xs text-slate-500">
-                  No job matches calculated yet. Click Explore Matches to find opportunities.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column: Active Applications Pipeline */}
-        <div className="lg:col-span-5 space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <div>
-                <CardTitle className="text-base font-bold text-slate-900">Active Applications</CardTitle>
-                <CardDescription className="text-xs text-slate-500">
-                  Track your interview schedule and follow-ups.
-                </CardDescription>
-              </div>
-              <Link href="/dashboard/applications">
-                <Button variant="ghost" size="sm" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">
-                  Full Pipeline <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                </Button>
-              </Link>
-            </CardHeader>
-
-            <CardContent className="divide-y divide-slate-100 p-0">
-              {recentApplications.length > 0 ? (
-                recentApplications.map((app) => (
-                  <div key={app.id} className="p-4 sm:p-5 space-y-3 hover:bg-slate-50/60 transition-colors">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="font-bold text-sm text-slate-900">{app.jobTitle}</div>
-                        <div className="text-xs text-slate-500 font-medium">{app.company}</div>
-                      </div>
-                      <Badge variant={app.badgeVariant} size="sm" className="uppercase font-bold">
-                        {app.stageBadge}
-                      </Badge>
-                    </div>
-
-                    <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-xs text-slate-700">
-                      <span className="font-bold text-slate-900">Next Action: </span>
-                      {app.nextAction}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-8 text-center text-xs text-slate-500">
-                  No active applications tracked yet. Use the Application Tracker to stay organized.
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          ))}
         </div>
       </div>
+
+      {/* Guided Walkthrough Modal */}
+      <Modal
+        isOpen={guideModalOpen}
+        onClose={() => setGuideModalOpen(false)}
+        title="💡 New User Guided Walkthrough"
+        description="Here is how to get the most out of your career platform in 4 simple steps:"
+      >
+        <div className="space-y-4 text-xs text-slate-700">
+          <div className="flex items-start gap-3 rounded-xl bg-indigo-50/60 p-3 border border-indigo-100">
+            <div className="h-6 w-6 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+              1
+            </div>
+            <div>
+              <h4 className="font-bold text-indigo-950">Complete Your InvoZone-Standard Profile</h4>
+              <p className="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
+                Add your phone number, GitHub link, degree, and work experience with exact time periods (e.g. <em>&quot;(3 Months)&quot;</em>) in the Onboarding or Profile wizard.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 rounded-xl bg-emerald-50/60 p-3 border border-emerald-100">
+            <div className="h-6 w-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+              2
+            </div>
+            <div>
+              <h4 className="font-bold text-emerald-950">View & Download Your Agency-Standard CV</h4>
+              <p className="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
+                Head to the <strong>AI Tailor Studio</strong> or click &quot;Print / Save PDF&quot; to export your formatted CV styled exactly like top software agencies (InvoZone, Turing, Toptal).
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 rounded-xl bg-blue-50/60 p-3 border border-blue-100">
+            <div className="h-6 w-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+              3
+            </div>
+            <div>
+              <h4 className="font-bold text-blue-950">1-Click Live Search on LinkedIn & Google Jobs</h4>
+              <p className="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
+                Click the <strong>LinkedIn Jobs</strong> or <strong>Google Jobs</strong> buttons to automatically query live postings matching your calibrated title and city.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 rounded-xl bg-violet-50/60 p-3 border border-violet-100">
+            <div className="h-6 w-6 rounded-full bg-violet-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+              4
+            </div>
+            <div>
+              <h4 className="font-bold text-violet-950">Tailor for Any Specific Company</h4>
+              <p className="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
+                Paste any job description to generate high-response cover letters and recruiter intro emails in 1 second with Groq AI.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => setGuideModalOpen(false)}
+              className="rounded-xl bg-indigo-600 text-xs font-bold"
+            >
+              Ready to Explore
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

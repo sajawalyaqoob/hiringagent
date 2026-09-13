@@ -7,7 +7,6 @@ import {
   Sparkles,
   FileText,
   Mail,
-  Globe,
   Send,
   Compass,
   Copy,
@@ -23,6 +22,14 @@ import {
   Eye,
   Code,
   User,
+  GraduationCap,
+  Briefcase,
+  FolderGit2,
+  Phone,
+  GitBranch,
+  MapPin,
+  ExternalLink,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,30 +37,105 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Modal } from "@/components/ui/modal";
 import type { GenerationType, GenerationState } from "@/types/database";
 
 const GENERATION_MODES: Array<{ id: GenerationType; title: string; desc: string; icon: React.ElementType }> = [
-  { id: "tailored_resume", title: "Tailored Resume", desc: "Keyword-matched resume bullets", icon: FileText },
+  { id: "tailored_resume", title: "InvoZone Professional CV", desc: "Agency-standard formatted CV", icon: FileText },
   { id: "cover_letter", title: "Cover Letter", desc: "Persuasive personalized letter", icon: Mail },
   { id: "recruiter_email", title: "Recruiter Email", desc: "High-response intro email", icon: Send },
-  { id: "linkedin_post", title: "LinkedIn Post", desc: "Job search broadcast post", icon: Globe },
+  { id: "linkedin_post", title: "LinkedIn Post", desc: "Job search broadcast post", icon: Compass },
   { id: "recruiter_message", title: "LinkedIn InMail", desc: "Concise 300-char message", icon: Send },
   { id: "application_strategy", title: "Interview Strategy", desc: "Talking points & prep notes", icon: Compass },
 ];
 
 export default function AiGenerationCenterPage() {
   const searchParams = useSearchParams();
-  const initialJobTitle = searchParams.get("jobTitle") || "Senior Full-Stack Engineer";
-  const initialCompany = searchParams.get("company") || "Stripe";
+  const initialJobTitle = searchParams.get("jobTitle") || "Full Stack Developer";
+  const initialCompany = searchParams.get("company") || "InvoZone";
 
-  // Profile data
+  // Full candidate profile state
   const [profile, setProfile] = React.useState({
-    fullName: "Alex Morgan",
-    email: "alex.morgan@example.com",
-    location: "Remote / Worldwide",
-    currentJobTitle: "Senior Full-Stack Engineer",
+    fullName: "Muhammad Ali",
+    professionalHeadline: "BS Computer Science Student | Full Stack Developer | DevOps Enthusiast",
+    email: "aliofficialpk63@gmail.com",
+    phone: "03020048966",
+    location: "Lahore, Pakistan",
+    githubUrl: "github.com/aliofficialpk",
+    linkedInUrl: "linkedin.com/in/aliofficialpk",
     avatarUrl: "/images/default-avatar.jpg",
-    skills: ["React", "TypeScript", "Next.js", "Node.js", "PostgreSQL"],
+    bio: "Computer Science student at NCBA&E with hands-on experience building, deploying, and maintaining production-grade web and mobile applications. Experienced in full-stack development, cloud infrastructure, database management, and DevOps operations. Seeking a Software Engineering or DevOps Internship to contribute to real-world products and scalable systems.",
+  });
+
+  const [educationList, setEducationList] = React.useState<any[]>([
+    {
+      degree: "BS Computer Science (BSCS)",
+      institution: "NCBA&E",
+      startDate: "2021",
+      endDate: "2025",
+      gpa: "3.4 / 4.0",
+    },
+  ]);
+
+  const [experienceList, setExperienceList] = React.useState<any[]>([
+    {
+      company: "UET Incubation Center",
+      jobTitle: "MERN Stack Developer Intern",
+      duration: "(3 Months)",
+      location: "Lahore, Pakistan",
+      responsibilities: [
+        "Developed web applications and backend services.",
+        "Engineered responsive components and REST APIs using modern TypeScript and Node.js.",
+      ],
+      technologiesUsed: ["React", "Node.js", "Express.js", "MongoDB"],
+    },
+    {
+      company: "ATechsole",
+      jobTitle: "Web Development Intern",
+      duration: "(3 Months)",
+      location: "Lahore, Pakistan",
+      responsibilities: [
+        "Worked on client projects, deployments, and production maintenance.",
+        "Assisted in Nginx reverse proxy configuration, Docker containers, and CI/CD pipelines.",
+      ],
+      technologiesUsed: ["Next.js", "TypeScript", "PostgreSQL", "Docker", "Nginx"],
+    },
+  ]);
+
+  const [projectList, setProjectList] = React.useState<any[]>([
+    {
+      name: "234Deals Marketplace Platform",
+      role: "Full Stack Developer & DevOps Engineer",
+      projectUrl: "https://234deals.com",
+      githubUrl: "https://github.com/aliofficialpk",
+      responsibilities: [
+        "Designed, developed, deployed, and maintained the complete marketplace ecosystem including website, mobile application, backend APIs, database architecture, and cloud infrastructure.",
+        "Built scalable REST APIs using Node.js and Express.js with PostgreSQL and Sequelize ORM.",
+        "Implemented authentication, security controls, Cloudinary file management, Twilio SMS, and SendGrid email services.",
+        "Managed production deployments, server administration, monitoring, and platform maintenance on VPS.",
+      ],
+    },
+    {
+      name: "2Techsole",
+      role: "Full Stack Developer",
+      projectUrl: "https://2techsole.page",
+      responsibilities: ["Engineered client landing platform and responsive booking system."],
+    },
+    {
+      name: "2DBite",
+      role: "Full Stack Developer",
+      projectUrl: "https://2dbite-frontend.vercel.app",
+      responsibilities: ["Built full-stack ordering interface with Next.js and Tailwind CSS."],
+    },
+  ]);
+
+  const [categorizedTechnologies, setCategorizedTechnologies] = React.useState({
+    frontend: "Next.js, React, TypeScript, Tailwind CSS, HTML5, CSS3",
+    backend: "Node.js, Express.js, REST APIs, Python",
+    mobile: "React Native",
+    database: "PostgreSQL, Sequelize ORM, MongoDB, Redis",
+    devops: "Docker, Linux Administration, Git, CI/CD, Nginx, VPS Management",
+    services: "Cloudinary, Twilio, SendGrid",
   });
 
   const [selectedMode, setSelectedMode] = React.useState<GenerationType>("tailored_resume");
@@ -61,123 +143,50 @@ export default function AiGenerationCenterPage() {
   const [company, setCompany] = React.useState(initialCompany);
   const [tone, setTone] = React.useState<"professional" | "confident" | "enthusiastic" | "concise">("professional");
   const [recipientName, setRecipientName] = React.useState("Hiring Team");
-  const [keyHighlights, setKeyHighlights] = React.useState("React, TypeScript, Next.js, Cloud APIs");
-  const [jobDescription, setJobDescription] = React.useState(
-    "Looking for a high-performing engineer with deep experience in modern web platforms and distributed services."
-  );
-
-  // Resume customization
+  const [keyHighlights, setKeyHighlights] = React.useState("Next.js, React, TypeScript, PostgreSQL, Docker");
   const [includePhoto, setIncludePhoto] = React.useState<boolean>(true);
-  const [templateTheme, setTemplateTheme] = React.useState<"modern" | "minimal" | "executive">("modern");
   const [previewTab, setPreviewTab] = React.useState<"document" | "raw">("document");
+  const [helpModalOpen, setHelpModalOpen] = React.useState(false);
 
-  // State Machine
-  const [status, setStatus] = React.useState<GenerationState>("idle");
+  // Generation state
+  const [status, setStatus] = React.useState<GenerationState>("completed");
   const [outputContent, setOutputContent] = React.useState<string>("");
   const [copied, setCopied] = React.useState(false);
 
-  // Fetch candidate's profile on mount
+  // Fetch candidate profile from API
   React.useEffect(() => {
     fetch("/api/profile")
       .then((r) => r.json())
       .then((d) => {
-        if (d?.data?.profile) {
-          const p = d.data.profile;
-          const skillsList = (d.data.skills || []).map((s: any) => s.name);
-          setProfile({
-            fullName: p.fullName || "Candidate",
-            email: p.email || "candidate@example.com",
-            location: p.location || "Remote",
-            currentJobTitle: p.currentJobTitle || initialJobTitle,
-            avatarUrl: p.avatarUrl || "/images/default-avatar.jpg",
-            skills: skillsList.length > 0 ? skillsList : ["TypeScript", "React", "Next.js", "PostgreSQL"],
-          });
-          if (!searchParams.get("jobTitle") && p.currentJobTitle) {
-            setJobTitle(p.currentJobTitle);
+        if (d?.data) {
+          if (d.data.profile) {
+            const p = d.data.profile;
+            setProfile((prev) => ({
+              ...prev,
+              fullName: p.fullName || prev.fullName,
+              professionalHeadline: p.professionalHeadline || prev.professionalHeadline,
+              email: p.email || prev.email,
+              phone: p.phone || prev.phone,
+              location: p.location || prev.location,
+              githubUrl: p.githubUrl || prev.githubUrl,
+              linkedInUrl: p.linkedInUrl || prev.linkedInUrl,
+              avatarUrl: p.avatarUrl || prev.avatarUrl,
+              bio: p.bio || prev.bio,
+            }));
           }
-          if (skillsList.length > 0) {
-            setKeyHighlights(skillsList.slice(0, 4).join(", "));
+          if (d.data.education && d.data.education.length > 0) {
+            setEducationList(d.data.education);
+          }
+          if (d.data.experiences && d.data.experiences.length > 0) {
+            setExperienceList(d.data.experiences);
+          }
+          if (d.data.projects && d.data.projects.length > 0) {
+            setProjectList(d.data.projects);
           }
         }
       })
       .catch(() => null);
-  }, [initialJobTitle, searchParams]);
-
-  const sampleOutputs: Record<GenerationType, string> = {
-    tailored_resume: `# ${profile.fullName}
-${profile.location} | ${profile.email} | (555) 234-8901 | linkedin.com/in/${profile.fullName.toLowerCase().replace(/\s+/g, "-")}
-
-## Tailored Profile Summary for ${jobTitle} at ${company}
-Performance-driven ${jobTitle} with proven expertise delivering modern scalable platforms and reliable data architectures. Calibrated specifically for ${company}'s technical priorities, bringing core competency in ${profile.skills.slice(0, 4).join(", ")}.
-
-## Targeted Key Achievements
-- **High-Impact Architecture:** Designed and deployed resilient services handling millions of monthly interactions with 99.99% uptime.
-- **Performance & Latency:** Reduced key web application load times and p99 query latency by over 35%.
-- **Technical Excellence:** Automated CI/CD pipelines and testing coverage, accelerating sprint release velocity.
-
-## Core Relevant Technologies
-- **Frontend & Full-Stack:** ${profile.skills.filter((_, i) => i % 2 === 0).join(", ") || "TypeScript, React, Next.js"}
-- **Backend & Cloud Services:** ${profile.skills.filter((_, i) => i % 2 !== 0).join(", ") || "Node.js, PostgreSQL, Docker"}
-- **Methodologies:** Agile / Scrum, Microservices, Clean Architecture, Automated Testing`,
-
-    cover_letter: `Dear ${recipientName},
-
-I am excited to submit my application for the ${jobTitle} position at ${company}. Having followed ${company}'s technology footprint and market leadership, I would love to bring my experience in ${profile.skills.slice(0, 3).join(", ")} to your team.
-
-In my recent engineering initiatives, I led the development of critical customer-facing platforms, delivering measurable improvements in performance, reliability, and developer experience.
-
-Specifically: ${keyHighlights} directly aligns with the technical goals outlined in ${company}'s role requirements.
-
-I would welcome the opportunity to discuss how my background and problem-solving skills can accelerate ${company}'s mission. Thank you for your consideration.
-
-Warm regards,
-${profile.fullName}
-${profile.location} | ${profile.email}`,
-
-    recruiter_email: `Subject: ${jobTitle} — ${profile.fullName} for ${company}
-
-Hi ${recipientName},
-
-I hope you're having a productive week!
-
-I noticed ${company}'s opening for the ${jobTitle} role and wanted to reach out directly. Over recent years, I've specialized in building reliable platforms with ${profile.skills.slice(0, 3).join(", ")}.
-
-Recently, I:
-• Scaled high-availability services handling significant daily volume with 99.99% reliability.
-• Reduced system latency and improved application performance by over 35%.
-• Led cross-functional initiatives emphasizing clean code and rapid delivery.
-
-Given ${company}'s focus on engineering excellence, I believe I could contribute immediately. Would you be open to a brief 10-minute introductory call next week?
-
-Best regards,
-${profile.fullName}
-${profile.email}`,
-
-    linkedin_post: `🚀 Excited to announce I am actively exploring new opportunities as a ${jobTitle}!
-
-I specialize in building high-performance applications with ${profile.skills.slice(0, 4).join(", ")}. Passionate about speed, scalable architectures, and collaborative engineering teams.
-
-I'm particularly interested in forward-thinking teams like ${company}.
-
-If your team is hiring or you'd like to connect, my DMs are open! Reposts and introductions are deeply appreciated. 🙏
-
-#JobSearch #${jobTitle.replace(/\s+/g, "")} #SoftwareEngineering #TechCareers`,
-
-    recruiter_message: `Hi ${recipientName} — saw your opening for ${jobTitle} at ${company}! I'm a ${jobTitle} specializing in ${profile.skills.slice(0, 3).join(", ")}. Would love to connect and share how my background aligns with your team's goals!`,
-
-    application_strategy: `## Strategic Application Plan for ${jobTitle} at ${company}
-
-### 1. Primary Strengths to Emphasize
-- **Proven Stack Mastery:** Deep proficiency in ${profile.skills.slice(0, 4).join(", ")}.
-- **Business Impact:** Demonstrated track record improving application latency and uptime.
-
-### 2. Tailored Value Proposition
-Highlight your ability to translate ${company}'s technical roadmap into resilient, clean code that accelerates delivery.
-
-### 3. Interview Talking Points
-1. *System Design:* Walk through your architectural decision-making and performance tuning.
-2. *Collaboration:* Describe how you partner with product and design to deliver robust user experiences.`,
-  };
+  }, []);
 
   const handleGenerate = async () => {
     setStatus("analyzing");
@@ -194,7 +203,6 @@ Highlight your ability to translate ${company}'s technical roadmap into resilien
           type: selectedMode,
           jobTitle,
           company,
-          jobDescription,
           tone,
           keyHighlights,
           recipientName,
@@ -206,18 +214,19 @@ Highlight your ability to translate ${company}'s technical roadmap into resilien
         setOutputContent(result.data.outputContent);
         setStatus("completed");
       } else {
-        setOutputContent(sampleOutputs[selectedMode]);
         setStatus("completed");
       }
     } catch {
-      setOutputContent(sampleOutputs[selectedMode]);
       setStatus("completed");
     }
   };
 
   const handleCopy = () => {
-    if (!outputContent) return;
-    navigator.clipboard.writeText(outputContent);
+    const textToCopy = selectedMode === "tailored_resume" && !outputContent
+      ? `${profile.fullName.toUpperCase()}\n${profile.professionalHeadline}\n${profile.location} | ${profile.phone} | ${profile.email} | ${profile.githubUrl}\n\nPROFILE\n${profile.bio}\n\nEDUCATION\n${educationList.map(e => `${e.degree} — ${e.institution} (${e.startDate} - ${e.endDate})`).join('\n')}\n\nEXPERIENCE\n${experienceList.map(e => `${e.jobTitle} — ${e.company} ${e.duration}\n${e.responsibilities.map((r: string) => `• ${r}`).join('\n')}`).join('\n\n')}\n\nPROJECTS\n${projectList.map(p => `${p.name} | ${p.role}\n${p.responsibilities.map((r: string) => `• ${r}`).join('\n')}`).join('\n\n')}`
+      : outputContent;
+
+    navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -228,40 +237,54 @@ Highlight your ability to translate ${company}'s technical roadmap into resilien
 
   return (
     <div className="space-y-6">
-      {/* 1. Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs">
+      {/* 1. Header Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs print:hidden">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-              AI Tailor Studio & Resume Creator
+              InvoZone-Standard Professional CV Studio
             </h1>
-            <Badge variant="info">Live Dynamic AI</Badge>
+            <Badge variant="success" className="font-bold">
+              Agency Format Verified
+            </Badge>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl leading-relaxed">
-            Create tailored resumes, persuasive cover letters, and recruiter outreach grounded in your real profile.
+            Standardized on top software agency benchmarks (InvoZone, Turing, Toptal) featuring clean contact headers, education, exact time periods, and live project demos.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl self-start sm:self-auto">
-          <Sparkles className="h-4 w-4 text-indigo-600" />
-          <span>Groq Compound Intelligence</span>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setHelpModalOpen(true)}
+            className="rounded-xl border-indigo-200 text-xs font-semibold text-indigo-700 bg-indigo-50/50 hover:bg-indigo-100"
+          >
+            <HelpCircle className="h-3.5 w-3.5 mr-1 text-indigo-600" />
+            CV Structure Tips
+          </Button>
+
+          <Button
+            type="button"
+            onClick={handlePrint}
+            className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm gap-1.5"
+          >
+            <Printer className="h-3.5 w-3.5" />
+            Download / Print PDF
+          </Button>
         </div>
       </div>
 
       {/* 2. Mode Selector Strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 print:hidden">
         {GENERATION_MODES.map((mode) => {
           const Icon = mode.icon;
           const isSelected = selectedMode === mode.id;
           return (
             <button
               key={mode.id}
-              onClick={() => {
-                setSelectedMode(mode.id);
-                if (status === "completed") {
-                  setOutputContent(sampleOutputs[mode.id]);
-                }
-              }}
+              onClick={() => setSelectedMode(mode.id)}
               className={`rounded-2xl border p-3.5 text-left transition-all flex flex-col justify-between cursor-pointer ${
                 isSelected
                   ? "border-indigo-600 bg-indigo-50/70 shadow-xs ring-1 ring-indigo-600/30"
@@ -287,138 +310,81 @@ Highlight your ability to translate ${company}'s technical roadmap into resilien
         })}
       </div>
 
-      {/* 3. Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Form & Configuration */}
-        <div className="lg:col-span-5 space-y-4">
+      {/* 3. Main Workspace */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: CV Customization Controls (Hidden on Print) */}
+        <div className="lg:col-span-4 space-y-4 print:hidden">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-slate-900">Customization Parameters</CardTitle>
+              <CardTitle className="text-base font-bold text-slate-900">CV & Tailor Settings</CardTitle>
               <CardDescription className="text-xs">
-                Tune target employer, role, and visual presentation options.
+                Fine-tune employer alignment and presentation options.
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-4 text-xs">
               <div>
-                <label className="font-bold text-slate-800 block mb-1.5">Target Job Title</label>
+                <label className="font-bold text-slate-800 block mb-1">Target Role Title</label>
                 <Input
                   value={jobTitle}
                   onChange={(e) => setJobTitle(e.target.value)}
-                  placeholder="e.g. Senior Full-Stack Engineer"
-                  className="rounded-xl"
+                  placeholder="e.g. Full Stack Developer"
+                  className="rounded-xl h-9"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-800 block mb-1.5">Company Name</label>
+                <label className="font-bold text-slate-800 block mb-1">Target Company</label>
                 <Input
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
-                  placeholder="e.g. Stripe, OpenAI"
-                  className="rounded-xl"
+                  placeholder="e.g. InvoZone / Stripe / Remote"
+                  className="rounded-xl h-9"
                 />
               </div>
 
-              {/* Photo & Template Controls for Resumes */}
-              {selectedMode === "tailored_resume" && (
-                <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3.5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Camera className="h-4 w-4 text-indigo-600" />
-                      <span className="font-bold text-slate-900 text-xs">Candidate Photo</span>
-                    </div>
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-indigo-700">
-                      <input
-                        type="checkbox"
-                        checked={includePhoto}
-                        onChange={(e) => setIncludePhoto(e.target.checked)}
-                        className="rounded accent-indigo-600 h-4 w-4 cursor-pointer"
-                      />
-                      <span>Include in Resume</span>
-                    </label>
-                  </div>
-
-                  {includePhoto && (
-                    <div className="flex items-center gap-3 pt-1 border-t border-indigo-100">
-                      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full ring-2 ring-indigo-500">
-                        <img src={profile.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-800 text-[11px]">{profile.fullName}</p>
-                        <p className="text-[10px] text-slate-500">{profile.email} • {profile.location}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="pt-2 border-t border-indigo-100">
-                    <label className="font-bold text-slate-800 block mb-1.5 text-[11px]">
-                      Template Style
-                    </label>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {(["modern", "minimal", "executive"] as const).map((tmpl) => (
-                        <button
-                          type="button"
-                          key={tmpl}
-                          onClick={() => setTemplateTheme(tmpl)}
-                          className={`rounded-lg py-1.5 px-2 text-[10px] font-bold capitalize transition ${
-                            templateTheme === tmpl
-                              ? "bg-indigo-600 text-white shadow-xs"
-                              : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-                          }`}
-                        >
-                          {tmpl}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              {/* Photo Toggle */}
+              <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Camera className="h-4 w-4 text-indigo-600" />
+                  <span className="font-bold text-slate-800 text-xs">Include Photo in CV</span>
                 </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-800 block mb-1.5">Tone & Voice</label>
-                  <Select
-                    value={tone}
-                    onChange={(e) => setTone(e.target.value as typeof tone)}
-                    options={[
-                      { value: "professional", label: "Professional" },
-                      { value: "confident", label: "High Confidence" },
-                      { value: "enthusiastic", label: "Enthusiastic" },
-                      { value: "concise", label: "Concise" },
-                    ]}
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-slate-800 block mb-1.5">Recipient (Optional)</label>
-                  <Input
-                    value={recipientName}
-                    onChange={(e) => setRecipientName(e.target.value)}
-                    placeholder="e.g. Hiring Manager"
-                    className="rounded-xl"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-800 block mb-1.5">Key Highlights / Skills</label>
-                <Input
-                  value={keyHighlights}
-                  onChange={(e) => setKeyHighlights(e.target.value)}
-                  placeholder="e.g. TypeScript, React, Next.js, Node.js"
-                  className="rounded-xl"
+                <input
+                  type="checkbox"
+                  checked={includePhoto}
+                  onChange={(e) => setIncludePhoto(e.target.checked)}
+                  className="rounded accent-indigo-600 h-4 w-4 cursor-pointer"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-800 block mb-1.5">Job Description (Optional)</label>
-                <Textarea
-                  rows={3}
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  placeholder="Paste requirements to align keywords with high ATS fidelity..."
-                  className="rounded-xl"
+                <label className="font-bold text-slate-800 block mb-1">Tone & Approach</label>
+                <Select
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value as typeof tone)}
+                  options={[
+                    { value: "professional", label: "Professional & Impactful" },
+                    { value: "confident", label: "Senior / High Confidence" },
+                    { value: "concise", label: "Concise & Fast-Paced" },
+                  ]}
                 />
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 space-y-2">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+                  Active CV Credentials
+                </span>
+                <div className="space-y-1 text-slate-600 text-[11px]">
+                  <p><strong>Candidate:</strong> {profile.fullName}</p>
+                  <p><strong>Education:</strong> {educationList[0]?.degree || "BS Computer Science"}</p>
+                  <p><strong>Experience:</strong> {experienceList[0]?.jobTitle} {experienceList[0]?.duration}</p>
+                  <p><strong>Key Project:</strong> {projectList[0]?.name}</p>
+                </div>
+                <Link href="/onboarding" className="block pt-1">
+                  <Button variant="outline" size="sm" className="w-full text-xs rounded-xl text-indigo-600 border-indigo-200">
+                    Edit Education, Work & Projects ↗
+                  </Button>
+                </Link>
               </div>
 
               <Button
@@ -426,220 +392,289 @@ Highlight your ability to translate ${company}'s technical roadmap into resilien
                 size="lg"
                 onClick={handleGenerate}
                 isLoading={status === "analyzing" || status === "generating"}
-                className="w-full font-bold shadow-md shadow-indigo-600/20 mt-2 rounded-xl bg-indigo-600 hover:bg-indigo-700"
+                className="w-full font-bold shadow-sm rounded-xl bg-indigo-600 hover:bg-indigo-700 mt-2"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                <span>
-                  {status === "analyzing"
-                    ? "Analyzing Job Keywords..."
-                    : status === "generating"
-                    ? "Generating Tailored Output..."
-                    : `Generate ${GENERATION_MODES.find((m) => m.id === selectedMode)?.title}`}
-                </span>
+                <span>Tailor for {company}</span>
               </Button>
             </CardContent>
           </Card>
         </div>
 
-        {/* Right Column: Output Preview & Formatted View */}
-        <div className="lg:col-span-7 space-y-4">
-          <Card className="flex flex-col min-h-[540px]">
-            <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-base font-bold text-slate-900">Output Preview</CardTitle>
-                {status === "completed" && <Badge variant="success">Ready</Badge>}
-              </div>
+        {/* Right Column: InvoZone-Standard CV Canvas (Prints Flawlessly) */}
+        <div className="lg:col-span-8 w-full">
+          {/* Action Bar Above Canvas */}
+          <div className="mb-3 flex items-center justify-between print:hidden">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                InvoZone Agency Standard Format
+              </span>
+              <Badge variant="info">Ready to Print</Badge>
+            </div>
 
-              <div className="flex items-center gap-1.5">
-                {selectedMode === "tailored_resume" && status === "completed" && (
-                  <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs mr-2">
-                    <button
-                      type="button"
-                      onClick={() => setPreviewTab("document")}
-                      className={`flex items-center gap-1 rounded-md px-2.5 py-1 font-semibold transition ${
-                        previewTab === "document" ? "bg-white text-indigo-600 shadow-2xs" : "text-slate-500 hover:text-slate-800"
-                      }`}
-                    >
-                      <Eye className="h-3 w-3" />
-                      Visual Sheet
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPreviewTab("raw")}
-                      className={`flex items-center gap-1 rounded-md px-2.5 py-1 font-semibold transition ${
-                        previewTab === "raw" ? "bg-white text-indigo-600 shadow-2xs" : "text-slate-500 hover:text-slate-800"
-                      }`}
-                    >
-                      <Code className="h-3 w-3" />
-                      Text
-                    </button>
-                  </div>
-                )}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopy}
+                className="text-xs font-semibold rounded-xl border-slate-300 gap-1.5"
+              >
+                {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                <span>{copied ? "Copied!" : "Copy Text"}</span>
+              </Button>
 
-                {status === "completed" && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handlePrint}
-                      className="text-xs font-semibold gap-1.5 rounded-xl border-slate-200"
-                      title="Print or Save as PDF"
-                    >
-                      <Printer className="h-3.5 w-3.5 text-slate-600" />
-                      <span className="hidden sm:inline">PDF</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCopy}
-                      className="text-xs font-semibold gap-1.5 rounded-xl border-slate-200"
-                    >
-                      {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                      <span>{copied ? "Copied!" : "Copy"}</span>
-                    </Button>
-                  </>
-                )}
-              </div>
-            </CardHeader>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handlePrint}
+                className="text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm gap-1.5"
+              >
+                <Printer className="h-3.5 w-3.5" />
+                <span>Print PDF</span>
+              </Button>
+            </div>
+          </div>
 
-            <CardContent className="flex-1 flex flex-col p-5">
-              {status === "idle" && (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-400 space-y-3">
-                  <div className="h-12 w-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                    <Sparkles className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800">Your Tailored Document Will Appear Here</h4>
-                    <p className="text-xs text-slate-500 mt-1 max-w-sm leading-relaxed">
-                      Select your target role on the left and click &quot;Generate&quot; to produce an ATS-aligned resume or letter.
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGenerate}
-                    className="mt-2 text-xs font-semibold rounded-xl text-indigo-600 border-indigo-200 hover:bg-indigo-50"
-                  >
-                    Quick Sample Generate
-                  </Button>
-                </div>
-              )}
+          {/* Actual Professional CV Sheet */}
+          <div
+            id="invozone-cv-sheet"
+            className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-10 shadow-lg text-slate-800 space-y-6 print:border-none print:shadow-none print:p-0 print:m-0"
+          >
+            {/* Header: Photo + Name + Contact Bar */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 border-b-2 border-slate-900 pb-5">
+              <div className="space-y-1 max-w-xl">
+                <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-slate-950 font-sans">
+                  {profile.fullName}
+                </h1>
+                <p className="text-xs sm:text-sm font-bold text-slate-700 leading-snug">
+                  {profile.professionalHeadline}
+                </p>
+                <p className="text-xs text-slate-600 font-medium">
+                  {profile.location}
+                </p>
 
-              {(status === "analyzing" || status === "generating") && (
-                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-4">
-                  <div className="relative">
-                    <div className="h-14 w-14 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin" />
-                    <Sparkles className="h-6 w-6 text-indigo-600 absolute inset-0 m-auto animate-pulse" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-slate-900">
-                      {status === "analyzing" ? "Analyzing Job & Skills..." : "Synthesizing Tailored Copy..."}
-                    </p>
-                    <p className="text-xs text-slate-500">Aligning keywords to bypass applicant screening algorithms.</p>
-                  </div>
-                </div>
-              )}
-
-              {status === "completed" && (
-                <div className="space-y-4 flex-1">
-                  {/* Formatted Document View (When Resume & Document tab is selected) */}
-                  {selectedMode === "tailored_resume" && previewTab === "document" ? (
-                    <div
-                      className={`rounded-2xl border p-6 sm:p-8 bg-white shadow-xs transition-all ${
-                        templateTheme === "modern"
-                          ? "border-indigo-200/80 bg-gradient-to-b from-indigo-50/20 to-white"
-                          : templateTheme === "executive"
-                          ? "border-slate-300 font-serif"
-                          : "border-slate-200"
-                      }`}
-                    >
-                      {/* Resume Header with Optional Photo */}
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
-                        <div className="flex items-center gap-4">
-                          {includePhoto && (
-                            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full ring-2 ring-indigo-500 shadow-sm">
-                              <img src={profile.avatarUrl} alt={profile.fullName} className="h-full w-full object-cover" />
-                            </div>
-                          )}
-                          <div>
-                            <h2 className="text-2xl font-black tracking-tight text-slate-900">
-                              {profile.fullName}
-                            </h2>
-                            <p className="text-xs font-bold text-indigo-600 tracking-wide mt-0.5">
-                              {jobTitle} • {company} Candidate
-                            </p>
-                            <p className="text-[11px] text-slate-500 mt-1">
-                              {profile.location} | {profile.email} | (555) 234-8901
-                            </p>
-                          </div>
-                        </div>
-
-                        <Badge variant="success" className="shrink-0 text-xs font-bold">
-                          96% ATS Score
-                        </Badge>
-                      </div>
-
-                      {/* Summary */}
-                      <div className="mt-5 space-y-2">
-                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
-                          Tailored Career Summary
-                        </h4>
-                        <p className="text-xs text-slate-600 leading-relaxed">
-                          Performance-driven {jobTitle} with demonstrated track record delivering reliable,
-                          scalable platforms. Calibrated specifically for {company}&apos;s tech priorities, bringing core competency in {keyHighlights}.
-                        </p>
-                      </div>
-
-                      {/* Achievements */}
-                      <div className="mt-5 space-y-2">
-                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
-                          Targeted Achievements & Experience
-                        </h4>
-                        <ul className="space-y-1.5 text-xs text-slate-600 list-disc pl-4">
-                          <li>
-                            <strong className="text-slate-800">High-Impact Delivery:</strong> Architected and deployed services supporting millions of monthly requests with 99.99% uptime.
-                          </li>
-                          <li>
-                            <strong className="text-slate-800">Optimization:</strong> Reduced core application latency and improved response times by over 35%.
-                          </li>
-                          <li>
-                            <strong className="text-slate-800">Collaboration:</strong> Partnered with cross-functional product and engineering leaders to drive rapid execution.
-                          </li>
-                        </ul>
-                      </div>
-
-                      {/* Technical Skills */}
-                      <div className="mt-5 space-y-2">
-                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
-                          Core Competencies
-                        </h4>
-                        <div className="flex flex-wrap gap-1.5">
-                          {profile.skills.map((sk) => (
-                            <span
-                              key={sk}
-                              className="rounded-lg bg-indigo-50 border border-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-800"
-                            >
-                              {sk}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Plain Text / Markdown View */
-                    <Textarea
-                      readOnly
-                      rows={18}
-                      value={outputContent}
-                      className="font-mono text-xs leading-relaxed bg-slate-50 border-slate-200 rounded-xl p-4 text-slate-800 focus:outline-none"
-                    />
+                {/* Contact row with separator bars */}
+                <div className="flex flex-wrap items-center gap-y-1 gap-x-2.5 text-xs text-slate-700 font-medium pt-1">
+                  {profile.phone && <span>{profile.phone}</span>}
+                  {profile.phone && <span>|</span>}
+                  <span>{profile.email}</span>
+                  {profile.githubUrl && <span>|</span>}
+                  {profile.githubUrl && (
+                    <a href={`https://${profile.githubUrl}`} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
+                      {profile.githubUrl}
+                    </a>
+                  )}
+                  {profile.linkedInUrl && <span>|</span>}
+                  {profile.linkedInUrl && (
+                    <a href={`https://${profile.linkedInUrl}`} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
+                      {profile.linkedInUrl}
+                    </a>
                   )}
                 </div>
+              </div>
+
+              {includePhoto && (
+                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border-2 border-slate-900 shadow-md bg-slate-100">
+                  <img
+                    src={profile.avatarUrl || "/images/default-avatar.jpg"}
+                    alt={profile.fullName}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* PROFILE SECTION */}
+            <div className="space-y-1.5">
+              <h2 className="text-xs font-black uppercase tracking-widest text-slate-950 border-b border-slate-200 pb-1">
+                Profile
+              </h2>
+              <p className="text-xs text-slate-700 leading-relaxed font-normal text-justify">
+                {profile.bio}
+              </p>
+            </div>
+
+            {/* CORE SKILLS SECTION */}
+            <div className="space-y-1.5">
+              <h2 className="text-xs font-black uppercase tracking-widest text-slate-950 border-b border-slate-200 pb-1">
+                Core Skills
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-slate-950">▪</span> Full Stack Development
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-slate-950">▪</span> DevOps & Cloud Infrastructure
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-slate-950">▪</span> Database Design & Optimization
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-slate-950">▪</span> REST API Development
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-slate-950">▪</span> Linux Administration
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-slate-950">▪</span> CI/CD & Deployment Automation
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-slate-950">▪</span> Application Security
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-slate-950">▪</span> Production System Maintenance
+                </div>
+              </div>
+            </div>
+
+            {/* TECHNOLOGIES CATEGORIZED */}
+            <div className="space-y-1.5">
+              <h2 className="text-xs font-black uppercase tracking-widest text-slate-950 border-b border-slate-200 pb-1">
+                Technologies
+              </h2>
+              <div className="space-y-1 text-xs text-slate-700">
+                <p>
+                  <strong className="text-slate-950">Frontend:</strong> {categorizedTechnologies.frontend}
+                </p>
+                <p>
+                  <strong className="text-slate-950">Backend:</strong> {categorizedTechnologies.backend}
+                </p>
+                <p>
+                  <strong className="text-slate-950">Mobile:</strong> {categorizedTechnologies.mobile}
+                </p>
+                <p>
+                  <strong className="text-slate-950">Database:</strong> {categorizedTechnologies.database}
+                </p>
+                <p>
+                  <strong className="text-slate-950">DevOps:</strong> {categorizedTechnologies.devops}
+                </p>
+                <p>
+                  <strong className="text-slate-950">Services:</strong> {categorizedTechnologies.services}
+                </p>
+              </div>
+            </div>
+
+            {/* WORK EXPERIENCE (With exact time periods) */}
+            <div className="space-y-3">
+              <h2 className="text-xs font-black uppercase tracking-widest text-slate-950 border-b border-slate-200 pb-1">
+                Experience
+              </h2>
+              <div className="space-y-3">
+                {experienceList.map((exp, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex flex-wrap items-baseline justify-between text-xs">
+                      <span className="font-bold text-slate-950">
+                        {exp.jobTitle} — <span className="font-semibold text-slate-800">{exp.company}</span>
+                      </span>
+                      <span className="font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded text-[11px]">
+                        {exp.duration}
+                      </span>
+                    </div>
+                    <ul className="list-disc pl-4 space-y-0.5 text-xs text-slate-700">
+                      {exp.responsibilities.map((resp: string, rIdx: number) => (
+                        <li key={rIdx}>{resp}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* PROJECTS SECTION (With live URLs) */}
+            <div className="space-y-3">
+              <h2 className="text-xs font-black uppercase tracking-widest text-slate-950 border-b border-slate-200 pb-1">
+                Projects
+              </h2>
+              <div className="space-y-3">
+                {projectList.map((proj, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex flex-wrap items-center justify-between text-xs">
+                      <span className="font-bold text-slate-950">
+                        {proj.name} {proj.role && `| ${proj.role}`}
+                      </span>
+                      {proj.projectUrl && (
+                        <a
+                          href={proj.projectUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] font-bold text-indigo-600 hover:underline inline-flex items-center gap-0.5"
+                        >
+                          {proj.projectUrl} ↗
+                        </a>
+                      )}
+                    </div>
+                    <ul className="list-disc pl-4 space-y-0.5 text-xs text-slate-700">
+                      {proj.responsibilities.map((resp: string, rIdx: number) => (
+                        <li key={rIdx}>{resp}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* EDUCATION SECTION */}
+            <div className="space-y-1.5">
+              <h2 className="text-xs font-black uppercase tracking-widest text-slate-950 border-b border-slate-200 pb-1">
+                Education
+              </h2>
+              <div className="space-y-1">
+                {educationList.map((edu, idx) => (
+                  <div key={idx} className="flex flex-wrap items-baseline justify-between text-xs">
+                    <div>
+                      <span className="font-bold text-slate-950">{edu.degree}</span> —{" "}
+                      <span className="font-semibold text-slate-800">{edu.institution}</span>
+                    </div>
+                    <span className="text-[11px] text-slate-600 font-medium">
+                      {edu.startDate && `${edu.startDate} – `}{edu.endDate || "Present"}
+                      {edu.gpa && ` | CGPA: ${edu.gpa}`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Structure Guidance Modal */}
+      <Modal
+        isOpen={helpModalOpen}
+        onClose={() => setHelpModalOpen(false)}
+        title="💡 InvoZone Professional CV Standard"
+        description="The architectural breakdown of your professional CV format:"
+      >
+        <div className="space-y-3.5 text-xs text-slate-700">
+          <div className="rounded-xl bg-indigo-50/70 p-3 border border-indigo-100">
+            <h4 className="font-bold text-indigo-950">1. Clean Contact Strip & Phone</h4>
+            <p className="text-slate-600 text-[11px] mt-0.5">
+              Top agencies like InvoZone require an uncrowded header with direct phone numbers (WhatsApp ready) and active GitHub profile links.
+            </p>
+          </div>
+          <div className="rounded-xl bg-emerald-50/70 p-3 border border-emerald-100">
+            <h4 className="font-bold text-emerald-950">2. Time Periods on Experience</h4>
+            <p className="text-slate-600 text-[11px] mt-0.5">
+              Stating durations such as <em>&quot;(3 Months)&quot;</em> or explicit month/year dates provides concrete proof of internship and project longevity.
+            </p>
+          </div>
+          <div className="rounded-xl bg-violet-50/70 p-3 border border-violet-100">
+            <h4 className="font-bold text-violet-950">3. Live Project URLs & Categorized Stack</h4>
+            <p className="text-slate-600 text-[11px] mt-0.5">
+              Having clickable live URLs (e.g. <em>https://234deals.com</em>, <em>https://2techsole.page</em>) demonstrates real-world software delivery.
+            </p>
+          </div>
+          <div className="flex justify-end pt-1">
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => setHelpModalOpen(false)}
+              className="rounded-xl bg-indigo-600 text-xs font-bold"
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
