@@ -13,14 +13,13 @@ import {
   Calendar,
   ArrowRight,
   ExternalLink,
-  SlidersHorizontal,
   Plus,
-  CheckCircle,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { formatDate } from "@/lib/utils/formatters";
@@ -66,7 +65,7 @@ export default function JobsDiscoveryPage() {
       matchScore: 96,
       experienceRequired: "6+ years",
       matchingSkills: ["Next.js", "React", "TypeScript", "Tailwind CSS", "Web Performance"],
-      missingSkills: ["Micro-frontend architecture"],
+      missingSkills: ["Micro-frontends"],
       postedAt: "2026-03-02",
       isSaved: true,
       description:
@@ -99,37 +98,35 @@ export default function JobsDiscoveryPage() {
       salary: "$180,000 - $225,000",
       matchScore: 78,
       experienceRequired: "5+ years",
-      matchingSkills: ["AWS", "Kubernetes", "Docker", "Go", "PostgreSQL"],
-      missingSkills: ["Terraform", "Multi-Cloud Azure/GCP"],
+      matchingSkills: ["AWS", "Kubernetes", "Docker", "CI/CD GitHub Actions"],
+      missingSkills: ["Terraform", "Python"],
       postedAt: "2026-03-01",
       isSaved: false,
       description:
-        "Build high-security multi-cloud foundations across AWS, Azure, and GCP for Snowflake's petabyte data cloud. Automate infrastructure as code with Terraform, Helm, and Go-based operators.",
+        "Snowflake is hiring a Cloud Infrastructure Engineer to optimize our multi-region Kubernetes clusters and secure cloud infrastructure automation.",
     },
   ]);
 
-  const toggleSave = (jobId: string) => {
-    setJobs((prev) =>
-      prev.map((j) => (j.id === jobId ? { ...j, isSaved: !j.isSaved } : j))
-    );
+  const toggleSave = (id: string) => {
+    setJobs(jobs.map((j) => (j.id === id ? { ...j, isSaved: !j.isSaved } : j)));
   };
 
   const handleAnalyzeNewJob = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newJobTitle || !newCompany || !newDescription) return;
+    if (!newJobTitle || !newCompany) return;
 
     const newJobItem = {
-      id: `job_pasted_${Date.now()}`,
+      id: `job_custom_${Date.now()}`,
       title: newJobTitle,
       company: newCompany,
       location: newLocation,
       workplaceType: "remote",
       seniority: "senior",
-      salary: "$180,000 - $220,000 (Est.)",
-      matchScore: 89,
+      salary: "Market Competitive",
+      matchScore: 88,
       experienceRequired: "5+ years",
       matchingSkills: ["TypeScript", "Next.js", "React", "PostgreSQL"],
-      missingSkills: ["Domain Specific API"],
+      missingSkills: ["Domain Specific Tools"],
       postedAt: new Date().toISOString().split("T")[0],
       isSaved: true,
       description: newDescription,
@@ -156,38 +153,38 @@ export default function JobsDiscoveryPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#d5d9d9] pb-4 bg-white p-4 rounded-xs">
+      {/* 1. Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs">
         <div>
-          <h1 className="text-lg font-bold text-[#0f1111]">Job Discovery & Compatibility</h1>
-          <p className="text-xs text-[#565959] mt-0.5">
-            Real-time market opportunities calibrated against your verified senior engineering profile.
+          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Job Matches</h1>
+          <p className="text-sm text-slate-500 mt-1 max-w-2xl leading-relaxed">
+            Curated opportunities matched against your verified skills, experience, and compensation preferences.
           </p>
         </div>
 
         <Button
           variant="primary"
-          size="sm"
+          size="md"
           onClick={() => setSavedModalOpen(true)}
-          className="font-bold text-xs gap-1.5 shrink-0"
+          className="font-bold text-sm gap-2 shrink-0 shadow-sm"
         >
-          <Plus className="h-3.5 w-3.5" />
-          <span>Analyze Any Job Description</span>
+          <Plus className="h-4 w-4" />
+          <span>Analyze Any Job</span>
         </Button>
       </div>
 
-      {/* Filter Toolbar */}
-      <div className="rounded-xs border border-[#d5d9d9] bg-white p-4 shadow-2xs space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+      {/* 2. Filter Toolbar (Responsive Grid) */}
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-xs space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
           {/* Search Input */}
           <div className="sm:col-span-6 relative">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
+            <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search by job title, company, or technical keyword..."
+              placeholder="Search by job title, company, or skill..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 w-full rounded-xs border border-[#d5d9d9] pl-8 pr-3 text-xs text-[#0f1111] focus:border-[#f08804] focus:outline-none"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-10 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
             />
           </div>
 
@@ -196,9 +193,9 @@ export default function JobsDiscoveryPage() {
             <select
               value={workplaceFilter}
               onChange={(e) => setWorkplaceFilter(e.target.value)}
-              className="h-8 w-full rounded-xs border border-[#d5d9d9] bg-white px-2 text-xs text-[#0f1111] focus:border-[#f08804] focus:outline-none"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 text-xs sm:text-sm text-slate-700 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
             >
-              <option value="all">All Workplace Types</option>
+              <option value="all">All Locations (Any)</option>
               <option value="remote">Remote Only</option>
               <option value="hybrid">Hybrid</option>
               <option value="on_site">On-Site</option>
@@ -206,9 +203,9 @@ export default function JobsDiscoveryPage() {
           </div>
 
           {/* Min Match Slider */}
-          <div className="sm:col-span-3 flex items-center gap-2">
-            <span className="text-[11px] font-bold text-[#565959] whitespace-nowrap">
-              Min Fit: {minMatchScore}%
+          <div className="sm:col-span-3 flex items-center gap-2.5 px-2">
+            <span className="text-xs font-bold text-slate-600 whitespace-nowrap">
+              Min Match: {minMatchScore}%
             </span>
             <input
               type="range"
@@ -217,63 +214,63 @@ export default function JobsDiscoveryPage() {
               step="5"
               value={minMatchScore}
               onChange={(e) => setMinMatchScore(parseInt(e.target.value))}
-              className="w-full accent-[#f08804]"
+              className="w-full accent-indigo-600 cursor-pointer"
             />
           </div>
         </div>
       </div>
 
-      {/* Jobs Results List */}
+      {/* 3. Jobs Results List */}
       <div className="space-y-4">
-        <div className="flex justify-between items-center text-xs text-[#565959]">
-          <span>Showing {filteredJobs.length} scored positions</span>
-          <span className="font-semibold text-[#0f1111]">Calibrated with Alex Morgan Profile (88%)</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 gap-1">
+          <span className="font-semibold text-slate-700">Showing {filteredJobs.length} matched positions</span>
+          <span>Matched against your verified profile (88% completeness)</span>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-3.5">
           {filteredJobs.map((job) => (
-            <Card key={job.id} className="border-[#d5d9d9] bg-white hover:border-[#9ca3af] transition-colors shadow-2xs">
-              <CardContent className="p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <Card key={job.id} className="hover:border-indigo-200/90 transition-all duration-200 shadow-xs hover:shadow-md">
+              <CardContent className="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
                 {/* Left: Job Meta & Skills */}
-                <div className="space-y-2 max-w-2xl">
+                <div className="space-y-2.5 max-w-2xl">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link
                       href={`/dashboard/jobs/${job.id}`}
-                      className="text-base font-bold text-[#0f1111] hover:text-[#b45309]"
+                      className="text-base font-bold text-slate-900 hover:text-indigo-600 transition-colors"
                     >
                       {job.title}
                     </Link>
-                    <span className="rounded-xs bg-[#f8f9fa] border border-[#d5d9d9] px-2 py-0.5 text-[11px] font-bold text-[#0f1111]">
+                    <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-800">
                       {job.company}
                     </span>
-                    <span className="text-xs text-[#565959] capitalize font-medium">
+                    <span className="text-xs text-slate-500 capitalize font-medium">
                       • {job.workplaceType}
                     </span>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-[#565959]">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5" />
+                  <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
+                    <span className="flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-slate-400" />
                       {job.location}
                     </span>
-                    <span className="flex items-center gap-1 font-semibold text-[#0f1111]">
-                      <DollarSign className="h-3.5 w-3.5" />
+                    <span className="flex items-center gap-1.5 font-semibold text-slate-800">
+                      <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
                       {job.salary}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" />
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-slate-400" />
                       Posted {formatDate(job.postedAt)}
                     </span>
                   </div>
 
                   {/* Skills Alignment Badges */}
-                  <div className="space-y-1 pt-1">
+                  <div className="space-y-1.5 pt-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] uppercase font-bold text-gray-400">Matches:</span>
+                      <span className="text-[11px] font-bold text-slate-400">Matching:</span>
                       {job.matchingSkills.map((skill) => (
                         <span
                           key={skill}
-                          className="rounded-xs bg-[#ecfdf5] border border-[#a7f3d0] px-1.5 py-0.2 text-[11px] text-[#067d62] font-medium"
+                          className="rounded-lg bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 text-xs text-emerald-800 font-medium"
                         >
                           ✓ {skill}
                         </span>
@@ -281,13 +278,13 @@ export default function JobsDiscoveryPage() {
                     </div>
                     {job.missingSkills.length > 0 && (
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[10px] uppercase font-bold text-gray-400">Gaps:</span>
+                        <span className="text-[11px] font-bold text-slate-400">Missing:</span>
                         {job.missingSkills.map((gap) => (
                           <span
                             key={gap}
-                            className="rounded-xs bg-[#fffbeb] border border-[#fde68a] px-1.5 py-0.2 text-[11px] text-[#b45309] font-medium"
+                            className="rounded-lg bg-amber-50 border border-amber-200/80 px-2 py-0.5 text-xs text-amber-800 font-medium"
                           >
-                            ⚠ {gap}
+                            + {gap}
                           </span>
                         ))}
                       </div>
@@ -296,30 +293,36 @@ export default function JobsDiscoveryPage() {
                 </div>
 
                 {/* Right: Score Gauge & Actions */}
-                <div className="flex items-center justify-between lg:justify-end gap-4 shrink-0 lg:border-l lg:border-[#e5e7eb] lg:pl-6 pt-3 lg:pt-0 border-t lg:border-t-0 border-[#f3f4f6]">
+                <div className="flex items-center justify-between lg:justify-end gap-5 shrink-0 lg:border-l lg:border-slate-100 lg:pl-6 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
                   <div className="text-left lg:text-right">
-                    <div className="text-2xl font-black text-[#067d62]">{job.matchScore}%</div>
-                    <div className="text-[10px] uppercase font-bold text-gray-400">Compatibility</div>
+                    <div className="text-2xl font-black text-emerald-600 tracking-tight">{job.matchScore}%</div>
+                    <div className="text-[10px] uppercase font-bold text-slate-400">Match Fit</div>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => toggleSave(job.id)}
-                      className={`p-2 rounded-xs border ${
+                      className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
                         job.isSaved
-                          ? "bg-[#fffbeb] text-[#f08804] border-[#fde68a]"
-                          : "bg-white text-gray-400 border-[#d5d9d9] hover:text-black"
+                          ? "bg-amber-50 text-amber-600 border-amber-200"
+                          : "bg-white text-slate-400 border-slate-200 hover:text-slate-800 hover:bg-slate-50"
                       }`}
-                      title={job.isSaved ? "Saved in opportunities" : "Save job"}
+                      title={job.isSaved ? "Saved" : "Save job"}
                     >
                       <Bookmark className="h-4 w-4 fill-current" />
                     </button>
 
                     <Link href={`/dashboard/jobs/${job.id}`}>
-                      <Button variant="primary" size="sm" className="font-bold text-xs">
-                        Analyze Fit
-                        <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                      <Button variant="outline" size="sm" className="font-semibold text-xs">
+                        Details
+                      </Button>
+                    </Link>
+
+                    <Link href={`/dashboard/create?jobTitle=${encodeURIComponent(job.title)}&company=${encodeURIComponent(job.company)}`}>
+                      <Button variant="primary" size="sm" className="font-bold text-xs gap-1 shadow-xs">
+                        <span>Tailor</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
                       </Button>
                     </Link>
                   </div>
@@ -334,62 +337,66 @@ export default function JobsDiscoveryPage() {
       <Modal
         isOpen={savedModalOpen}
         onClose={() => setSavedModalOpen(false)}
-        title="Analyze Any Job Description"
-        description="Paste raw job description text to calculate your candidate compatibility score and extract missing skills."
+        title="Analyze Custom Job Description"
+        description="Paste any job description to calculate your compatibility score and identify matching skills."
       >
-        <form onSubmit={handleAnalyzeNewJob} className="space-y-3 text-xs">
+        <form onSubmit={handleAnalyzeNewJob} className="space-y-4 text-xs">
           <div>
-            <label className="font-bold text-[#0f1111]">Job Title</label>
+            <label className="font-bold text-slate-800 block mb-1">Job Title</label>
             <Input
               placeholder="e.g. Senior Backend Engineer"
               value={newJobTitle}
               onChange={(e) => setNewJobTitle(e.target.value)}
               required
+              className="rounded-xl"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="font-bold text-[#0f1111]">Company</label>
+              <label className="font-bold text-slate-800 block mb-1">Company</label>
               <Input
-                placeholder="e.g. GitHub"
+                placeholder="e.g. Stripe"
                 value={newCompany}
                 onChange={(e) => setNewCompany(e.target.value)}
                 required
+                className="rounded-xl"
               />
             </div>
             <div>
-              <label className="font-bold text-[#0f1111]">Location</label>
+              <label className="font-bold text-slate-800 block mb-1">Location</label>
               <Input
                 placeholder="e.g. Remote"
                 value={newLocation}
                 onChange={(e) => setNewLocation(e.target.value)}
+                className="rounded-xl"
               />
             </div>
           </div>
 
           <div>
-            <label className="font-bold text-[#0f1111]">Raw Job Description</label>
+            <label className="font-bold text-slate-800 block mb-1">Job Description</label>
             <Textarea
-              rows={5}
-              placeholder="Paste full job description requirements and responsibilities..."
+              rows={4}
+              placeholder="Paste job requirements, responsibilities, and qualifications..."
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
               required
+              className="rounded-xl"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#f3f4f6]">
+          <div className="pt-2 flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => setSavedModalOpen(false)}
             >
               Cancel
             </Button>
-            <Button type="submit" variant="primary" size="sm" className="font-bold">
-              Run Compatibility Engine
+            <Button type="submit" variant="primary" size="md" className="font-bold">
+              Analyze Compatibility
             </Button>
           </div>
         </form>

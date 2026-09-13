@@ -3,29 +3,29 @@ import { siteConfig } from "@/lib/config/site";
 
 export function MarketingFooter() {
   return (
-    <footer className="w-full border-t border-[#d5d9d9] bg-[#131921] text-gray-300">
+    <footer className="w-full border-t border-slate-200 bg-slate-900 text-slate-400">
       <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Brand Info */}
-          <div className="md:col-span-2 space-y-3">
+          <div className="sm:col-span-2 space-y-4">
             <div className="flex items-center gap-2">
-              <span className="font-black text-lg text-white tracking-tight">HIREBOOST</span>
-              <span className="px-1.5 py-0.5 rounded-xs bg-[#f08804] text-[#0f1111] text-xs font-black tracking-widest uppercase">
+              <span className="font-extrabold text-xl text-white tracking-tight">HireBoost</span>
+              <span className="px-2 py-0.5 rounded-full bg-indigo-500 text-white text-[10px] font-black tracking-widest uppercase">
                 AI
               </span>
             </div>
-            <p className="text-xs text-gray-400 max-w-sm leading-relaxed">
-              {siteConfig.description}
+            <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
+              Smart career intelligence platform empowering job seekers with tailored resumes, high-fit job matches, and automated application tracking.
             </p>
-            <div className="pt-2 text-xs text-gray-400">
-              Architecture designed for enterprise scale, Vercel deployment, and Supabase / PostgreSQL persistence.
+            <div className="pt-2 text-xs text-slate-500">
+              Built with Next.js App Router, Groq AI, and Supabase PostgreSQL.
             </div>
           </div>
 
           {/* Product Links */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white">Product</h4>
-            <ul className="space-y-2 text-xs">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">Product</h4>
+            <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/features" className="hover:text-white transition-colors">
                   Features & Workflow
@@ -33,39 +33,39 @@ export function MarketingFooter() {
               </li>
               <li>
                 <Link href="/pricing" className="hover:text-white transition-colors">
-                  SaaS Pricing
+                  Pricing Plans
                 </Link>
               </li>
               <li>
                 <Link href="/dashboard/resume/analyze" className="hover:text-white transition-colors">
-                  ATS Resume Analyzer
+                  ATS Resume Checker
                 </Link>
               </li>
               <li>
                 <Link href="/dashboard/jobs" className="hover:text-white transition-colors">
-                  Compatibility Engine
+                  Job Matcher
                 </Link>
               </li>
               <li>
                 <Link href="/dashboard/create" className="hover:text-white transition-colors">
-                  AI Application Studio
+                  AI Tailor Studio
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Platform Links */}
+          {/* Quick Links */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white">Platform</h4>
-            <ul className="space-y-2 text-xs">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">Platform</h4>
+            <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/about" className="hover:text-white transition-colors">
-                  About & Architecture
+                  About Us
                 </Link>
               </li>
               <li>
                 <Link href="/dashboard" className="hover:text-white transition-colors">
-                  Dashboard Demo
+                  Live Demo Workspace
                 </Link>
               </li>
               <li>
@@ -75,7 +75,7 @@ export function MarketingFooter() {
               </li>
               <li>
                 <Link href="/signup" className="hover:text-white transition-colors">
-                  Create Account
+                  Get Started Free
                 </Link>
               </li>
             </ul>
@@ -83,23 +83,23 @@ export function MarketingFooter() {
 
           {/* Trust & Security */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white">Security & Trust</h4>
-            <ul className="space-y-2 text-xs text-gray-400">
-              <li>• Server-only secret isolation</li>
-              <li>• SOC2-ready mock architecture</li>
-              <li>• ATS compliance standards</li>
-              <li>• Zero hallucination policy</li>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">Trust & Privacy</h4>
+            <ul className="space-y-2 text-sm text-slate-400">
+              <li>✓ Zero AI hallucinations</li>
+              <li>✓ Strict candidate privacy</li>
+              <li>✓ Standard ATS compliance</li>
+              <li>✓ Secure cloud infrastructure</li>
             </ul>
           </div>
         </div>
 
         {/* Bottom copyright */}
-        <div className="mt-8 pt-6 border-t border-[#232f3e] flex flex-col sm:flex-row items-center justify-between text-xs text-gray-400 gap-4">
-          <p>© {new Date().getFullYear()} HireBoost AI. Built with Amazon-inspired productivity principles.</p>
+        <div className="mt-10 pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+          <p>© {new Date().getFullYear()} HireBoost AI. All rights reserved.</p>
           <div className="flex items-center gap-6">
-            <span className="text-gray-400">Production SaaS Architecture</span>
-            <span className="text-gray-400">Vercel Ready</span>
-            <span className="text-gray-400">Next.js 16 App Router</span>
+            <span>Fast AI Processing</span>
+            <span>ATS Certified</span>
+            <span>Next.js 16</span>
           </div>
         </div>
       </div>

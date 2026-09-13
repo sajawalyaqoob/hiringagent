@@ -7,22 +7,22 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function Badge({ className, variant = "default", size = "sm", ...props }: BadgeProps) {
-  const baseStyles = "inline-flex items-center font-medium rounded-sm select-none";
+  const baseStyles = "inline-flex items-center font-medium rounded-full select-none transition-colors";
 
   const variants = {
-    default: "bg-[#f3f4f6] text-[#374151] border border-[#e5e7eb]",
-    navy: "bg-[#131921] text-white border border-[#131921]",
-    success: "bg-[#ecfdf5] text-[#065f46] border border-[#a7f3d0]",
-    warning: "bg-[#fffbeb] text-[#92400e] border border-[#fde68a]",
-    danger: "bg-[#fef2f2] text-[#991b1b] border border-[#fecaca]",
-    info: "bg-[#eff6ff] text-[#1e40af] border border-[#bfdbfe]",
-    outline: "bg-white text-[#0f1111] border border-[#d5d9d9]",
-    score: "bg-[#fff7ed] text-[#c2410c] border border-[#fed7aa] font-bold",
+    default: "bg-slate-100 text-slate-700 border border-slate-200/80",
+    navy: "bg-slate-900 text-white border border-slate-900",
+    success: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    warning: "bg-amber-50 text-amber-700 border border-amber-200",
+    danger: "bg-rose-50 text-rose-700 border border-rose-200",
+    info: "bg-indigo-50 text-indigo-700 border border-indigo-200",
+    outline: "bg-white text-slate-700 border border-slate-200",
+    score: "bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold",
   };
 
   const sizes = {
-    sm: "px-2 py-0.5 text-xs",
-    md: "px-2.5 py-1 text-xs",
+    sm: "px-2.5 py-0.5 text-xs",
+    md: "px-3 py-1 text-xs",
   };
 
   return <div className={cn(baseStyles, variants[variant], sizes[size], className)} {...props} />;

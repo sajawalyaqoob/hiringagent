@@ -1,47 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  /* Core Amazon-Inspired Palette */
-  --color-primary: #f08804;
-  --color-primary-hover: #d97706;
-  --color-primary-active: #b45309;
-  --color-primary-foreground: #0f1111;
+  /* Modern Premium Career Intelligence Palette */
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+  --color-primary-active: #3730a3;
+  --color-primary-foreground: #ffffff;
 
-  --color-navy: #131921;
-  --color-navy-hover: #1f2937;
-  --color-navy-light: #232f3e;
+  --color-secondary: #f8fafc;
+  --color-secondary-hover: #f1f5f9;
+
+  --color-navy: #0f172a;
+  --color-navy-hover: #1e293b;
+  --color-navy-light: #334155;
   --color-navy-foreground: #ffffff;
 
-  --color-background: #f8f9fa;
+  --color-background: #f8fafc;
   --color-surface: #ffffff;
-  --color-surface-subtle: #f3f4f6;
-  --color-surface-hover: #e5e7eb;
+  --color-surface-subtle: #f1f5f9;
+  --color-surface-hover: #e2e8f0;
 
-  --color-foreground: #0f1111;
-  --color-foreground-secondary: #374151;
-  --color-muted: #565959;
-  --color-muted-foreground: #6b7280;
+  --color-foreground: #0f172a;
+  --color-foreground-secondary: #334155;
+  --color-muted: #64748b;
+  --color-muted-foreground: #94a3b8;
 
-  --color-border: #d5d9d9;
-  --color-border-subtle: #e5e7eb;
-  --color-border-strong: #9ca3af;
-  --color-ring: #f08804;
+  --color-border: #e2e8f0;
+  --color-border-subtle: #f1f5f9;
+  --color-border-strong: #cbd5e1;
+  --color-ring: #6366f1;
 
-  --color-success: #067d62;
+  --color-success: #10b981;
   --color-success-bg: #ecfdf5;
   --color-success-border: #a7f3d0;
 
-  --color-warning: #b45309;
+  --color-warning: #f59e0b;
   --color-warning-bg: #fffbeb;
   --color-warning-border: #fde68a;
 
-  --color-danger: #c41c1c;
+  --color-danger: #ef4444;
   --color-danger-bg: #fef2f2;
   --color-danger-border: #fecaca;
 
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
 }
 
 @theme {
@@ -82,7 +87,7 @@
   --color-brand-danger-bg: var(--color-danger-bg);
   --color-brand-danger-border: var(--color-danger-border);
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
 }
 
 /* Base resets & typography */

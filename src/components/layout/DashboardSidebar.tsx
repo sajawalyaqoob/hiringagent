@@ -14,7 +14,7 @@ import {
   ChevronRight,
   LogOut,
   ScanLine,
-  ExternalLink,
+  X,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -24,9 +24,9 @@ interface SidebarProps {
 
 const navItems = [
   { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Career Profile", href: "/dashboard/profile", icon: UserCircle, badge: "88%" },
-  { title: "Resumes", href: "/dashboard/resume", icon: FileText },
-  { title: "ATS Analyzer", href: "/dashboard/resume/analyze", icon: ScanLine },
+  { title: "My Profile", href: "/dashboard/profile", icon: UserCircle, badge: "88%" },
+  { title: "My Resumes", href: "/dashboard/resume", icon: FileText },
+  { title: "ATS Checker", href: "/dashboard/resume/analyze", icon: ScanLine },
   { title: "Job Matches", href: "/dashboard/jobs", icon: Briefcase, badge: "4 New" },
   { title: "Applications", href: "/dashboard/applications", icon: Layers, badge: "5 Active" },
   { title: "AI Studio", href: "/dashboard/create", icon: Sparkles, highlight: true },
@@ -38,29 +38,43 @@ export function DashboardSidebar({ isOpen = true, onClose }: SidebarProps) {
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-[#d5d9d9] bg-[#131921] text-gray-200 transition-transform duration-200 ease-in-out md:static md:translate-x-0 ${
-        isOpen ? "translate-x-0" : "-translate-x-full"
+      className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white text-slate-700 transition-transform duration-200 ease-in-out md:static md:translate-x-0 ${
+        isOpen ? "translate-x-0 shadow-2xl md:shadow-none" : "-translate-x-full"
       }`}
     >
       {/* Brand Header */}
-      <div className="flex h-14 items-center justify-between border-b border-[#232f3e] px-4">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="flex items-center tracking-tight font-black text-lg">
-            <span className="text-white">HIREBOOST</span>
-            <span className="ml-1 px-1.5 py-0.5 rounded-xs bg-[#f08804] text-[#0f1111] text-xs font-black tracking-widest uppercase">
+      <div className="flex h-16 items-center justify-between border-b border-slate-100 px-5">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-xs">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div className="flex items-center tracking-tight font-extrabold text-lg text-slate-900">
+            <span>HireBoost</span>
+            <span className="ml-1 px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200/60 text-[9px] font-black tracking-wider uppercase">
               AI
             </span>
           </div>
         </Link>
-        <span className="rounded bg-[#232f3e] px-1.5 py-0.5 text-[10px] font-semibold text-gray-300">
-          PRO TIER
-        </span>
+        <div className="flex items-center gap-1">
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+            PRO
+          </span>
+          {/* Close button for mobile drawer */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 text-slate-400 hover:text-slate-700 md:hidden rounded-lg hover:bg-slate-100 transition-colors"
+            aria-label="Close Sidebar"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
-      {/* Main Navigation Links */}
+      {/* Navigation Links */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        <div className="px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400">
-          Platform
+        <div className="px-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          Navigation
         </div>
 
         {navItems.map((item) => {
@@ -72,28 +86,32 @@ export function DashboardSidebar({ isOpen = true, onClose }: SidebarProps) {
               key={item.href}
               href={item.href}
               onClick={onClose}
-              className={`group flex items-center justify-between rounded-sm px-3 py-2 text-xs font-medium transition-colors ${
+              className={`group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all ${
                 isActive
-                  ? "bg-[#f08804] text-[#0f1111] font-bold shadow-xs"
+                  ? "bg-indigo-50 text-indigo-700 font-bold shadow-xs"
                   : item.highlight
-                  ? "text-[#f08804] hover:bg-[#232f3e] hover:text-white"
-                  : "text-gray-300 hover:bg-[#232f3e] hover:text-white"
+                  ? "text-indigo-600 hover:bg-indigo-50/50 hover:text-indigo-700 font-semibold"
+                  : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
               }`}
             >
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 <Icon
-                  className={`h-4 w-4 shrink-0 ${
-                    isActive ? "text-[#0f1111]" : item.highlight ? "text-[#f08804]" : "text-gray-400 group-hover:text-white"
+                  className={`h-4 w-4 shrink-0 transition-colors ${
+                    isActive
+                      ? "text-indigo-600"
+                      : item.highlight
+                      ? "text-indigo-600"
+                      : "text-slate-400 group-hover:text-slate-700"
                   }`}
                 />
                 <span>{item.title}</span>
               </div>
               {item.badge && (
                 <span
-                  className={`rounded-xs px-1.5 py-0.5 text-[10px] font-bold ${
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
                     isActive
-                      ? "bg-[#0f1111] text-[#f08804]"
-                      : "bg-[#232f3e] text-gray-300 group-hover:text-white"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-slate-100 text-slate-600 group-hover:bg-slate-200"
                   }`}
                 >
                   {item.badge}
@@ -103,48 +121,48 @@ export function DashboardSidebar({ isOpen = true, onClose }: SidebarProps) {
           );
         })}
 
-        {/* Profile Completion Callout */}
-        <div className="pt-6 pb-2">
-          <div className="rounded-sm border border-[#232f3e] bg-[#0a0e14] p-3 text-xs">
-            <div className="flex items-center justify-between font-semibold text-white">
+        {/* Profile Strength Callout */}
+        <div className="pt-5 pb-2">
+          <div className="rounded-2xl border border-indigo-100 bg-gradient-to-b from-indigo-50/60 to-white p-4 text-xs shadow-xs space-y-2">
+            <div className="flex items-center justify-between font-bold text-slate-800">
               <span>Profile Strength</span>
-              <span className="text-[#f08804] font-bold">88%</span>
+              <span className="text-indigo-600">88%</span>
             </div>
-            <div className="mt-2 h-1.5 w-full rounded-full bg-[#232f3e] overflow-hidden">
-              <div className="h-full bg-[#f08804] rounded-full" style={{ width: "88%" }} />
+            <div className="h-2 w-full rounded-full bg-indigo-100/80 overflow-hidden">
+              <div className="h-full bg-indigo-600 rounded-full transition-all duration-500" style={{ width: "88%" }} />
             </div>
-            <p className="mt-2 text-[11px] text-gray-400">
-              Verify 2 more skills in the AI Interview to reach 100% and unlock high-match alerts.
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              Add 2 more skills to achieve a 100% profile score and unlock top recruiter matches.
             </p>
             <Link
               href="/dashboard/profile"
               onClick={onClose}
-              className="mt-2 inline-flex items-center text-[11px] font-semibold text-[#f08804] hover:underline"
+              className="inline-flex items-center text-[11px] font-bold text-indigo-600 hover:text-indigo-700 pt-1"
             >
-              Complete Interview <ChevronRight className="h-3 w-3 ml-0.5" />
+              Complete Profile <ChevronRight className="h-3 w-3 ml-0.5" />
             </Link>
           </div>
         </div>
       </div>
 
       {/* Footer / User Session Summary */}
-      <div className="border-t border-[#232f3e] p-3">
-        <div className="flex items-center justify-between rounded-sm p-2 hover:bg-[#232f3e]/60 transition-colors">
+      <div className="border-t border-slate-100 p-3">
+        <div className="flex items-center justify-between rounded-xl p-2 hover:bg-slate-50 transition-colors">
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="h-7 w-7 shrink-0 rounded-sm bg-[#232f3e] text-white flex items-center justify-center font-bold text-xs border border-[#374151]">
+            <div className="h-8 w-8 shrink-0 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center font-bold text-xs shadow-xs">
               AM
             </div>
             <div className="truncate">
-              <p className="truncate text-xs font-semibold text-white">Alex Morgan</p>
-              <p className="truncate text-[10px] text-gray-400">alex.morgan@example.com</p>
+              <p className="truncate text-xs font-bold text-slate-900">Alex Morgan</p>
+              <p className="truncate text-[10px] text-slate-400">alex.morgan@example.com</p>
             </div>
           </div>
           <Link
             href="/login"
             title="Sign Out"
-            className="p-1 text-gray-400 hover:text-white rounded-xs hover:bg-[#374151] transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
           >
-            <LogOut className="h-3.5 w-3.5" />
+            <LogOut className="h-4 w-4" />
           </Link>
         </div>
       </div>
