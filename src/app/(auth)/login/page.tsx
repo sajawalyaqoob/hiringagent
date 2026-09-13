@@ -56,7 +56,7 @@ export default function LoginPage() {
   };
 
   return (
-    <Card className="border-[#d5d9d9] shadow-sm">
+    <Card className="max-w-md mx-auto border-[#d5d9d9] shadow-sm">
       <CardHeader className="space-y-1">
         <CardTitle className="text-xl font-bold text-[#0f1111]">Sign In to HireBoost</CardTitle>
         <CardDescription>

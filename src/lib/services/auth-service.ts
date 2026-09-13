@@ -1,5 +1,5 @@
 import { createServerSupabaseClient, isSupabaseConfigured } from "../supabase/server";
-import { mockUser } from "../server/mock-db";
+import { mockUser, mockProfile } from "../server/mock-db";
 import type { User } from "@/types/database";
 
 export interface AuthState {
@@ -121,8 +121,13 @@ export class AuthService {
     }
 
     // Local dev mock sign up response
+    mockUser.email = email;
+    mockUser.name = name;
+    mockProfile.email = email;
+    mockProfile.fullName = name;
+
     const newUser: User = {
-      id: `usr_${Date.now().toString(36)}`,
+      id: mockUser.id || `usr_${Date.now().toString(36)}`,
       email,
       name,
       role: "user",

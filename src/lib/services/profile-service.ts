@@ -449,6 +449,70 @@ export class ProfileService {
     target.updatedAt = new Date().toISOString();
     return { ...target };
   }
+
+  async saveOnboarding(data: {
+    fullName?: string;
+    email?: string;
+    careerField?: string;
+    targetRole?: string;
+    workplacePreference?: string;
+    seniority?: string;
+    targetLocations?: string[];
+    minSalary?: number;
+    skills?: string[];
+    avatarUrl?: string;
+    bio?: string;
+  }): Promise<FullProfileData> {
+    if (data.fullName) mockProfile.fullName = data.fullName;
+    if (data.email) mockProfile.email = data.email;
+    if (data.targetRole) {
+      mockProfile.currentJobTitle = data.targetRole;
+      mockProfile.professionalHeadline = `${data.targetRole} • ${data.careerField || "Tech Specialist"}`;
+      mockJobPreferences.desiredJobTitles = [data.targetRole];
+    }
+    if (data.avatarUrl) mockProfile.avatarUrl = data.avatarUrl;
+    if (data.bio) mockProfile.bio = data.bio;
+    if (data.seniority) {
+      const s = data.seniority.toLowerCase();
+      if (["entry", "mid", "senior", "lead", "principal", "executive"].includes(s)) {
+        mockProfile.careerLevel = s as any;
+      }
+    }
+    if (data.workplacePreference) {
+      mockJobPreferences.workplacePreference = data.workplacePreference as any;
+    }
+    if (data.targetLocations && data.targetLocations.length > 0) {
+      mockJobPreferences.targetLocations = data.targetLocations;
+      mockProfile.location = data.targetLocations[0];
+    }
+    if (data.minSalary) {
+      mockJobPreferences.minimumSalary = data.minSalary;
+      mockJobPreferences.targetSalary = Math.round(data.minSalary * 1.2);
+    }
+    if (data.skills && data.skills.length > 0) {
+      mockJobPreferences.preferredTechnologies = data.skills;
+      // Add skills to mockSkills
+      for (const sk of data.skills) {
+        const exists = mockSkills.some((s) => s.name.toLowerCase() === sk.toLowerCase());
+        if (!exists) {
+          mockSkills.push({
+            id: `skl_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+            profileId: mockProfile.id,
+            name: sk,
+            category: "Technical",
+            proficiencyLevel: "proficient",
+            yearsOfExperience: 3,
+            verifiedViaInterview: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      }
+    }
+
+    mockProfile.updatedAt = new Date().toISOString();
+    return this.getFullProfile();
+  }
 }
 
 export const profileService = new ProfileService();

@@ -33,8 +33,31 @@ const navItems = [
   { title: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
-export function DashboardSidebar({ isOpen = true, onClose }: SidebarProps) {
+export function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const [profile, setProfile] = React.useState({
+    name: "Alex Morgan",
+    email: "alex.morgan@example.com",
+    avatarUrl: "/images/default-avatar.jpg",
+    title: "Software Engineer",
+  });
+
+  React.useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.data?.profile) {
+          const p = d.data.profile;
+          setProfile({
+            name: p.fullName || "User",
+            email: p.email || "user@example.com",
+            avatarUrl: p.avatarUrl || "/images/default-avatar.jpg",
+            title: p.currentJobTitle || "Tech Specialist",
+          });
+        }
+      })
+      .catch(() => null);
+  }, []);
 
   return (
     <aside
@@ -149,12 +172,22 @@ export function DashboardSidebar({ isOpen = true, onClose }: SidebarProps) {
       <div className="border-t border-slate-100 p-3">
         <div className="flex items-center justify-between rounded-xl p-2 hover:bg-slate-50 transition-colors">
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="h-8 w-8 shrink-0 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-              AM
+            <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full ring-1 ring-slate-200 bg-slate-100">
+              {profile.avatarUrl ? (
+                <img
+                  src={profile.avatarUrl}
+                  alt={profile.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="h-full w-full bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center font-bold text-xs">
+                  {profile.name.slice(0, 2).toUpperCase()}
+                </div>
+              )}
             </div>
             <div className="truncate">
-              <p className="truncate text-xs font-bold text-slate-900">Alex Morgan</p>
-              <p className="truncate text-[10px] text-slate-400">alex.morgan@example.com</p>
+              <p className="truncate text-xs font-bold text-slate-900">{profile.name}</p>
+              <p className="truncate text-[10px] text-slate-400">{profile.title}</p>
             </div>
           </div>
           <Link

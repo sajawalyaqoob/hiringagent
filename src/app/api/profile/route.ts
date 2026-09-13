@@ -37,3 +37,18 @@ export async function PUT(request: Request) {
     );
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const updated = await profileService.saveOnboarding(body);
+    return NextResponse.json({ success: true, data: updated });
+  } catch (error) {
+    console.error("[API profile POST]:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to save profile onboarding" },
+      { status: 500 }
+    );
+  }
+}
+

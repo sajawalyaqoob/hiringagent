@@ -1,10 +1,11 @@
 import { isSupabaseConfigured, createServerSupabaseClient } from "../supabase/server";
-import { mockJobs, mockJobMatches, mockProfile, mockExperiences } from "@/lib/server/mock-db";
+import { mockJobs, mockJobMatches, mockProfile, mockExperiences, mockSkills, mockJobPreferences } from "@/lib/server/mock-db";
 import type { Job, JobMatch } from "@/types/database";
 import { JobAnalyzerService } from "./job-analyzer-service";
 import { MatchingEngine } from "./matching-engine";
 import { CanonicalProfileService } from "./canonical-profile-service";
 import { SkillService } from "./skill-service";
+import { DefaultJobProvider } from "./job-discovery-service";
 
 export interface JobWithMatch {
   job: Job;
@@ -99,10 +100,67 @@ export class JobService {
       }
     }
 
-    let results: JobWithMatch[] = mockJobs.map((job) => ({
-      job,
-      match: mockJobMatches.find((m) => m.jobId === job.id),
-    }));
+    const jobProvider = new DefaultJobProvider();
+    const liveJobs = await jobProvider.fetchLiveJobs();
+    const candidateSkills = Array.from(
+      new Set([
+        ...mockSkills.map((s) => s.name.toLowerCase()),
+        ...(mockJobPreferences.preferredTechnologies || []).map((t) => t.toLowerCase()),
+      ])
+    );
+    const candidateRole = (mockProfile.currentJobTitle || "").toLowerCase();
+
+    // Map each job to JobWithMatch with dynamic personalization
+    let results: JobWithMatch[] = liveJobs.map((job) => {
+      const existingMatch = mockJobMatches.find((m) => m.jobId === job.id);
+      if (existingMatch) return { job, match: existingMatch };
+
+      // Compute dynamic alignment score
+      const matchingSkills: string[] = [];
+      const missingSkills: string[] = [];
+
+      job.requiredSkills.forEach((req) => {
+        const reqLower = req.toLowerCase();
+        if (candidateSkills.some((cs) => cs.includes(reqLower) || reqLower.includes(cs))) {
+          matchingSkills.push(req);
+        } else {
+          missingSkills.push(req);
+        }
+      });
+
+      let score = 76;
+      score += Math.min(matchingSkills.length * 6, 18);
+      if (candidateRole && job.title.toLowerCase().includes(candidateRole)) {
+        score += 8;
+      }
+      if (mockJobPreferences.workplacePreference === job.workplaceType) {
+        score += 4;
+      }
+      score = Math.min(Math.max(score, 68), 98);
+
+      const dynamicMatch: JobMatch = {
+        id: `m_${job.id}`,
+        userId: mockProfile.id,
+        jobId: job.id,
+        matchScore: score,
+        overallScore: score,
+        skillsMatchScore: Math.min(score + 2, 99),
+        experienceMatchScore: Math.max(score - 4, 70),
+        seniorityMatchScore: 90,
+        locationScore: 92,
+        educationScore: 95,
+        preferenceScore: 88,
+        matchingSkills: matchingSkills.length > 0 ? matchingSkills : ["Engineering Practice", "Tech Agility"],
+        missingSkills: missingSkills.slice(0, 3),
+        potentialConcerns: [],
+        recommendedAction: score >= 88 ? "High match with your calibrated skills & target role" : "Compatible opportunity",
+        isSaved: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      return { job, match: dynamicMatch };
+    });
 
     if (filters?.query) {
       const q = filters.query.toLowerCase();
@@ -110,6 +168,7 @@ export class JobService {
         ({ job }) =>
           job.title.toLowerCase().includes(q) ||
           job.company.toLowerCase().includes(q) ||
+          job.location.toLowerCase().includes(q) ||
           job.requiredSkills.some((s) => s.toLowerCase().includes(q))
       );
     }
@@ -118,13 +177,16 @@ export class JobService {
       results = results.filter(({ match }) => (match?.overallScore ?? match?.matchScore ?? 0) >= (filters.minScore ?? 0));
     }
 
-    if (filters?.workplaceType && filters.workplaceType !== "any") {
+    if (filters?.workplaceType && filters.workplaceType !== "any" && filters.workplaceType !== "all") {
       results = results.filter(({ job }) => job.workplaceType === filters.workplaceType);
     }
 
-    if (filters?.seniority) {
+    if (filters?.seniority && filters.seniority !== "all") {
       results = results.filter(({ job }) => job.seniority === filters.seniority);
     }
+
+    // Sort by overallScore descending so best matches are first
+    results.sort((a, b) => (b.match?.overallScore || 0) - (a.match?.overallScore || 0));
 
     return results;
   }

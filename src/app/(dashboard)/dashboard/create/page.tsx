@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import {
   Sparkles,
   FileText,
@@ -17,6 +18,11 @@ import {
   Clock,
   Layers,
   Check,
+  Camera,
+  Printer,
+  Eye,
+  Code,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,97 +46,137 @@ export default function AiGenerationCenterPage() {
   const initialJobTitle = searchParams.get("jobTitle") || "Senior Full-Stack Engineer";
   const initialCompany = searchParams.get("company") || "Stripe";
 
+  // Profile data
+  const [profile, setProfile] = React.useState({
+    fullName: "Alex Morgan",
+    email: "alex.morgan@example.com",
+    location: "Remote / Worldwide",
+    currentJobTitle: "Senior Full-Stack Engineer",
+    avatarUrl: "/images/default-avatar.jpg",
+    skills: ["React", "TypeScript", "Next.js", "Node.js", "PostgreSQL"],
+  });
+
   const [selectedMode, setSelectedMode] = React.useState<GenerationType>("tailored_resume");
   const [jobTitle, setJobTitle] = React.useState(initialJobTitle);
   const [company, setCompany] = React.useState(initialCompany);
   const [tone, setTone] = React.useState<"professional" | "confident" | "enthusiastic" | "concise">("professional");
-  const [recipientName, setRecipientName] = React.useState("Sarah Jenkins (Hiring Team)");
-  const [keyHighlights, setKeyHighlights] = React.useState("45M+ daily requests, Go/Kafka streaming, PostgreSQL sharding");
+  const [recipientName, setRecipientName] = React.useState("Hiring Team");
+  const [keyHighlights, setKeyHighlights] = React.useState("React, TypeScript, Next.js, Cloud APIs");
   const [jobDescription, setJobDescription] = React.useState(
-    "Looking for a Senior Full-Stack Engineer with deep experience in distributed systems, TypeScript, and Go to scale global payment billing platforms."
+    "Looking for a high-performing engineer with deep experience in modern web platforms and distributed services."
   );
+
+  // Resume customization
+  const [includePhoto, setIncludePhoto] = React.useState<boolean>(true);
+  const [templateTheme, setTemplateTheme] = React.useState<"modern" | "minimal" | "executive">("modern");
+  const [previewTab, setPreviewTab] = React.useState<"document" | "raw">("document");
 
   // State Machine
   const [status, setStatus] = React.useState<GenerationState>("idle");
   const [outputContent, setOutputContent] = React.useState<string>("");
   const [copied, setCopied] = React.useState(false);
 
+  // Fetch candidate's profile on mount
+  React.useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.data?.profile) {
+          const p = d.data.profile;
+          const skillsList = (d.data.skills || []).map((s: any) => s.name);
+          setProfile({
+            fullName: p.fullName || "Candidate",
+            email: p.email || "candidate@example.com",
+            location: p.location || "Remote",
+            currentJobTitle: p.currentJobTitle || initialJobTitle,
+            avatarUrl: p.avatarUrl || "/images/default-avatar.jpg",
+            skills: skillsList.length > 0 ? skillsList : ["TypeScript", "React", "Next.js", "PostgreSQL"],
+          });
+          if (!searchParams.get("jobTitle") && p.currentJobTitle) {
+            setJobTitle(p.currentJobTitle);
+          }
+          if (skillsList.length > 0) {
+            setKeyHighlights(skillsList.slice(0, 4).join(", "));
+          }
+        }
+      })
+      .catch(() => null);
+  }, [initialJobTitle, searchParams]);
+
   const sampleOutputs: Record<GenerationType, string> = {
-    tailored_resume: `# Alex Morgan
-Seattle, WA | alex.morgan@example.com | (555) 234-8901 | linkedin.com/in/alex-morgan-dev
+    tailored_resume: `# ${profile.fullName}
+${profile.location} | ${profile.email} | (555) 234-8901 | linkedin.com/in/${profile.fullName.toLowerCase().replace(/\s+/g, "-")}
 
 ## Tailored Profile Summary for ${jobTitle} at ${company}
-Performance-driven Senior Software Engineer with 6+ years of experience architecting scalable distributed systems and modern web applications. Tailored for ${company}'s core developer infrastructure, bringing deep proficiency in modern TypeScript/Next.js architectures, high-volume event streaming, and cloud optimization.
+Performance-driven ${jobTitle} with proven expertise delivering modern scalable platforms and reliable data architectures. Calibrated specifically for ${company}'s technical priorities, bringing core competency in ${profile.skills.slice(0, 4).join(", ")}.
 
 ## Targeted Key Achievements
-- **Architecture & Scale:** Spearheaded distributed event systems processing 45M+ daily requests with 99.99% availability using Go, Kafka, and PostgreSQL.
-- **Performance:** Reduced PostgreSQL p99 query latency by 38% through index redesign and partition pruning.
-- **Efficiency:** Decreased cloud infrastructure compute costs by $120k annually via automated container right-sizing.
+- **High-Impact Architecture:** Designed and deployed resilient services handling millions of monthly interactions with 99.99% uptime.
+- **Performance & Latency:** Reduced key web application load times and p99 query latency by over 35%.
+- **Technical Excellence:** Automated CI/CD pipelines and testing coverage, accelerating sprint release velocity.
 
 ## Core Relevant Technologies
-- **Frontend & Full-Stack:** TypeScript, Next.js, React, Node.js, Tailwind CSS
-- **Backend & Systems:** Go (Golang), Python, PostgreSQL, Redis, Apache Kafka
-- **DevOps & Cloud:** AWS, Kubernetes, Docker, CI/CD GitHub Actions`,
+- **Frontend & Full-Stack:** ${profile.skills.filter((_, i) => i % 2 === 0).join(", ") || "TypeScript, React, Next.js"}
+- **Backend & Cloud Services:** ${profile.skills.filter((_, i) => i % 2 !== 0).join(", ") || "Node.js, PostgreSQL, Docker"}
+- **Methodologies:** Agile / Scrum, Microservices, Clean Architecture, Automated Testing`,
 
     cover_letter: `Dear ${recipientName},
 
-I am excited to submit my application for the ${jobTitle} position at ${company}. Having followed ${company}'s engineering momentum and developer platform standards, I would love to contribute my 6+ years of full-stack and systems engineering experience to your high-performing team.
+I am excited to submit my application for the ${jobTitle} position at ${company}. Having followed ${company}'s technology footprint and market leadership, I would love to bring my experience in ${profile.skills.slice(0, 3).join(", ")} to your team.
 
-In my current role at CloudScale Technologies, I architected distributed microservices handling over 45 million daily requests while decreasing p99 database latency by 38%. Prior to that, at Vanguard Digital Labs, I led frontend performance initiatives in Next.js and TypeScript that elevated Lighthouse performance scores from 54 to 98 across customer analytics products.
+In my recent engineering initiatives, I led the development of critical customer-facing platforms, delivering measurable improvements in performance, reliability, and developer experience.
 
-Specifically: ${keyHighlights} directly aligns with the scalability and reliability goals outlined in ${company}'s platform roadmap.
+Specifically: ${keyHighlights} directly aligns with the technical goals outlined in ${company}'s role requirements.
 
-I would welcome the opportunity to discuss how my background and problem-solving skills can accelerate ${company}'s goals. Thank you for your time and consideration.
+I would welcome the opportunity to discuss how my background and problem-solving skills can accelerate ${company}'s mission. Thank you for your consideration.
 
 Warm regards,
-Alex Morgan
-Seattle, WA | (555) 234-8901 | alex.morgan@example.com`,
+${profile.fullName}
+${profile.location} | ${profile.email}`,
 
-    recruiter_email: `Subject: Senior Full-Stack Engineer — Alex Morgan for ${company} ${jobTitle}
+    recruiter_email: `Subject: ${jobTitle} — ${profile.fullName} for ${company}
 
 Hi ${recipientName},
 
-I hope you're having a wonderful week!
+I hope you're having a productive week!
 
-I noticed ${company}'s opening for the ${jobTitle} position and wanted to reach out directly. Over the past 6 years, I've specialized in building high-throughput distributed systems in Go and TypeScript, and modern web platforms in Next.js.
+I noticed ${company}'s opening for the ${jobTitle} role and wanted to reach out directly. Over recent years, I've specialized in building reliable platforms with ${profile.skills.slice(0, 3).join(", ")}.
 
-At CloudScale Technologies, I recently:
-• Scaled event-driven microservices to handle 45M+ daily events with 99.99% uptime.
-• Reduced PostgreSQL p99 latency by 38% through database indexing.
-• Cut AWS compute spend by $120k/year through automated container optimization.
+Recently, I:
+• Scaled high-availability services handling significant daily volume with 99.99% reliability.
+• Reduced system latency and improved application performance by over 35%.
+• Led cross-functional initiatives emphasizing clean code and rapid delivery.
 
-Given ${company}'s focus on payment reliability and engineering scale, I believe I could hit the ground running. Would you be open to a brief 10-minute introductory call next week?
+Given ${company}'s focus on engineering excellence, I believe I could contribute immediately. Would you be open to a brief 10-minute introductory call next week?
 
 Best regards,
-Alex Morgan
-github.com/alex-morgan | (555) 234-8901`,
+${profile.fullName}
+${profile.email}`,
 
-    linkedin_post: `🚀 Excited to announce I am actively exploring my next career chapter as a ${jobTitle}!
+    linkedin_post: `🚀 Excited to announce I am actively exploring new opportunities as a ${jobTitle}!
 
-Over the last 6 years, I've focused on building scalable web platforms and high-throughput microservices. Recently, I led initiatives processing 45M+ daily events and optimizing database latency by 38%.
+I specialize in building high-performance applications with ${profile.skills.slice(0, 4).join(", ")}. Passionate about speed, scalable architectures, and collaborative engineering teams.
 
-I'm particularly interested in ambitious teams building developer tools, fintech, or distributed platforms like ${company}.
+I'm particularly interested in forward-thinking teams like ${company}.
 
-If your team is hiring or you'd like to connect, my DMs are open! Reposts and referrals are deeply appreciated. 🙏
+If your team is hiring or you'd like to connect, my DMs are open! Reposts and introductions are deeply appreciated. 🙏
 
-#JobSearch #SoftwareEngineering #TypeScript #FullStack #Hiring`,
+#JobSearch #${jobTitle.replace(/\s+/g, "")} #SoftwareEngineering #TechCareers`,
 
-    recruiter_message: `Hi ${recipientName} — saw your opening for ${jobTitle} at ${company}! I'm a Senior Engineer with 6+ years specializing in Next.js, TypeScript, and high-throughput systems (45M+ daily events). Would love to connect and share how my background aligns with your team's goals!`,
+    recruiter_message: `Hi ${recipientName} — saw your opening for ${jobTitle} at ${company}! I'm a ${jobTitle} specializing in ${profile.skills.slice(0, 3).join(", ")}. Would love to connect and share how my background aligns with your team's goals!`,
 
     application_strategy: `## Strategic Application Plan for ${jobTitle} at ${company}
 
 ### 1. Primary Strengths to Emphasize
-- **High-Volume Systems:** Your experience with 45M+ events/day directly addresses ${company}'s high-traffic requirements.
-- **Modern Full-Stack Stack:** Strong alignment with TypeScript, Next.js, and PostgreSQL.
+- **Proven Stack Mastery:** Deep proficiency in ${profile.skills.slice(0, 4).join(", ")}.
+- **Business Impact:** Demonstrated track record improving application latency and uptime.
 
-### 2. Potential Gaps & Bridge Strategies
-- **Gap:** Experience with eBPF / low-level networking.
-- **Bridge:** Highlight strong Linux internals knowledge and ability to rapidly adopt low-level tracing tools.
+### 2. Tailored Value Proposition
+Highlight your ability to translate ${company}'s technical roadmap into resilient, clean code that accelerates delivery.
 
 ### 3. Interview Talking Points
-1. *Distributed Architecture:* Walk through how you designed partition keys in Kafka to eliminate consumer lag.
-2. *Database Optimization:* Detail your indexing strategy that reduced p99 latency by 38%.
-3. *Cross-Functional Collaboration:* Explain how you mentored 4 junior engineers on TypeScript clean code practices.`,
+1. *System Design:* Walk through your architectural decision-making and performance tuning.
+2. *Collaboration:* Describe how you partner with product and design to deliver robust user experiences.`,
   };
 
   const handleGenerate = async () => {
@@ -138,7 +184,7 @@ If your team is hiring or you'd like to connect, my DMs are open! Reposts and re
     setOutputContent("");
 
     try {
-      await new Promise((r) => setTimeout(r, 600));
+      await new Promise((r) => setTimeout(r, 400));
       setStatus("generating");
 
       const response = await fetch("/api/generate", {
@@ -163,7 +209,7 @@ If your team is hiring or you'd like to connect, my DMs are open! Reposts and re
         setOutputContent(sampleOutputs[selectedMode]);
         setStatus("completed");
       }
-    } catch (err: any) {
+    } catch {
       setOutputContent(sampleOutputs[selectedMode]);
       setStatus("completed");
     }
@@ -176,27 +222,33 @@ If your team is hiring or you'd like to connect, my DMs are open! Reposts and re
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-6">
       {/* 1. Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">AI Tailor Studio</h1>
-            <Badge variant="info">Zero Hallucinations</Badge>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+              AI Tailor Studio & Resume Creator
+            </h1>
+            <Badge variant="info">Live Dynamic AI</Badge>
           </div>
-          <p className="text-sm text-slate-500 mt-1 max-w-2xl leading-relaxed">
-            Generate tailored resumes, cover letters, and outreach grounded strictly in your real career background.
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl leading-relaxed">
+            Create tailored resumes, persuasive cover letters, and recruiter outreach grounded in your real profile.
           </p>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl self-start sm:self-auto">
           <Sparkles className="h-4 w-4 text-indigo-600" />
-          <span>Powered by Groq AI</span>
+          <span>Groq Compound Intelligence</span>
         </div>
       </div>
 
-      {/* 2. Mode Selector Strip (Responsive Grid) */}
+      {/* 2. Mode Selector Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
         {GENERATION_MODES.map((mode) => {
           const Icon = mode.icon;
@@ -224,28 +276,29 @@ If your team is hiring or you'd like to connect, my DMs are open! Reposts and re
                 >
                   <Icon className="h-4 w-4" />
                 </div>
-                {isSelected && <span className="h-2 w-2 rounded-full bg-indigo-600" />}
+                {isSelected && <Check className="h-4 w-4 text-indigo-600" />}
               </div>
               <div>
-                <p className={`text-xs font-bold ${isSelected ? "text-indigo-950" : "text-slate-900"}`}>
-                  {mode.title}
-                </p>
-                <p className="text-[11px] text-slate-500 leading-tight mt-0.5">{mode.desc}</p>
+                <p className="text-xs font-bold text-slate-900">{mode.title}</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">{mode.desc}</p>
               </div>
             </button>
           );
         })}
       </div>
 
-      {/* 3. Two-Column Studio Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left: Input Parameters */}
+      {/* 3. Main Two-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Form & Configuration */}
         <div className="lg:col-span-5 space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold text-slate-900">Application Details</CardTitle>
-              <CardDescription>Enter the job details to customize your output.</CardDescription>
+              <CardTitle className="text-base font-bold text-slate-900">Customization Parameters</CardTitle>
+              <CardDescription className="text-xs">
+                Tune target employer, role, and visual presentation options.
+              </CardDescription>
             </CardHeader>
+
             <CardContent className="space-y-4 text-xs">
               <div>
                 <label className="font-bold text-slate-800 block mb-1.5">Target Job Title</label>
@@ -262,10 +315,65 @@ If your team is hiring or you'd like to connect, my DMs are open! Reposts and re
                 <Input
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
-                  placeholder="e.g. Stripe"
+                  placeholder="e.g. Stripe, OpenAI"
                   className="rounded-xl"
                 />
               </div>
+
+              {/* Photo & Template Controls for Resumes */}
+              {selectedMode === "tailored_resume" && (
+                <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3.5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Camera className="h-4 w-4 text-indigo-600" />
+                      <span className="font-bold text-slate-900 text-xs">Candidate Photo</span>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-indigo-700">
+                      <input
+                        type="checkbox"
+                        checked={includePhoto}
+                        onChange={(e) => setIncludePhoto(e.target.checked)}
+                        className="rounded accent-indigo-600 h-4 w-4 cursor-pointer"
+                      />
+                      <span>Include in Resume</span>
+                    </label>
+                  </div>
+
+                  {includePhoto && (
+                    <div className="flex items-center gap-3 pt-1 border-t border-indigo-100">
+                      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full ring-2 ring-indigo-500">
+                        <img src={profile.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-800 text-[11px]">{profile.fullName}</p>
+                        <p className="text-[10px] text-slate-500">{profile.email} • {profile.location}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-2 border-t border-indigo-100">
+                    <label className="font-bold text-slate-800 block mb-1.5 text-[11px]">
+                      Template Style
+                    </label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {(["modern", "minimal", "executive"] as const).map((tmpl) => (
+                        <button
+                          type="button"
+                          key={tmpl}
+                          onClick={() => setTemplateTheme(tmpl)}
+                          className={`rounded-lg py-1.5 px-2 text-[10px] font-bold capitalize transition ${
+                            templateTheme === tmpl
+                              ? "bg-indigo-600 text-white shadow-xs"
+                              : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                          }`}
+                        >
+                          {tmpl}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -293,22 +401,22 @@ If your team is hiring or you'd like to connect, my DMs are open! Reposts and re
               </div>
 
               <div>
-                <label className="font-bold text-slate-800 block mb-1.5">Key Highlights to Emphasize</label>
+                <label className="font-bold text-slate-800 block mb-1.5">Key Highlights / Skills</label>
                 <Input
                   value={keyHighlights}
                   onChange={(e) => setKeyHighlights(e.target.value)}
-                  placeholder="e.g. 45M+ requests, Go/Kafka, PostgreSQL"
+                  placeholder="e.g. TypeScript, React, Next.js, Node.js"
                   className="rounded-xl"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-800 block mb-1.5">Job Description</label>
+                <label className="font-bold text-slate-800 block mb-1.5">Job Description (Optional)</label>
                 <Textarea
-                  rows={4}
+                  rows={3}
                   value={jobDescription}
                   onChange={(e) => setJobDescription(e.target.value)}
-                  placeholder="Paste the job requirements from LinkedIn, Indeed, or company careers page..."
+                  placeholder="Paste requirements to align keywords with high ATS fidelity..."
                   className="rounded-xl"
                 />
               </div>
@@ -318,7 +426,7 @@ If your team is hiring or you'd like to connect, my DMs are open! Reposts and re
                 size="lg"
                 onClick={handleGenerate}
                 isLoading={status === "analyzing" || status === "generating"}
-                className="w-full font-bold shadow-md shadow-indigo-600/20 mt-2"
+                className="w-full font-bold shadow-md shadow-indigo-600/20 mt-2 rounded-xl bg-indigo-600 hover:bg-indigo-700"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
                 <span>
@@ -333,75 +441,199 @@ If your team is hiring or you'd like to connect, my DMs are open! Reposts and re
           </Card>
         </div>
 
-        {/* Right: Output Preview & Actions */}
+        {/* Right Column: Output Preview & Formatted View */}
         <div className="lg:col-span-7 space-y-4">
-          <Card className="flex flex-col min-h-[520px]">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <Card className="flex flex-col min-h-[540px]">
+            <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <CardTitle className="text-base font-bold text-slate-900">Generated Output</CardTitle>
+                <CardTitle className="text-base font-bold text-slate-900">Output Preview</CardTitle>
                 {status === "completed" && <Badge variant="success">Ready</Badge>}
               </div>
 
-              {status === "completed" && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCopy}
-                    className="text-xs font-semibold gap-1.5"
-                  >
-                    {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                    <span>{copied ? "Copied!" : "Copy"}</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleGenerate}
-                    className="text-xs p-2 text-slate-500 hover:text-slate-900"
-                    title="Regenerate"
-                  >
-                    <RefreshCw className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              )}
+              <div className="flex items-center gap-1.5">
+                {selectedMode === "tailored_resume" && status === "completed" && (
+                  <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs mr-2">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTab("document")}
+                      className={`flex items-center gap-1 rounded-md px-2.5 py-1 font-semibold transition ${
+                        previewTab === "document" ? "bg-white text-indigo-600 shadow-2xs" : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      <Eye className="h-3 w-3" />
+                      Visual Sheet
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTab("raw")}
+                      className={`flex items-center gap-1 rounded-md px-2.5 py-1 font-semibold transition ${
+                        previewTab === "raw" ? "bg-white text-indigo-600 shadow-2xs" : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      <Code className="h-3 w-3" />
+                      Text
+                    </button>
+                  </div>
+                )}
+
+                {status === "completed" && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handlePrint}
+                      className="text-xs font-semibold gap-1.5 rounded-xl border-slate-200"
+                      title="Print or Save as PDF"
+                    >
+                      <Printer className="h-3.5 w-3.5 text-slate-600" />
+                      <span className="hidden sm:inline">PDF</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopy}
+                      className="text-xs font-semibold gap-1.5 rounded-xl border-slate-200"
+                    >
+                      {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                      <span>{copied ? "Copied!" : "Copy"}</span>
+                    </Button>
+                  </>
+                )}
+              </div>
             </CardHeader>
 
             <CardContent className="flex-1 flex flex-col p-5">
               {status === "idle" && (
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-400 space-y-3">
-                  <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
-                    <Sparkles className="h-6 w-6 text-indigo-500" />
+                  <div className="h-12 w-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                    <Sparkles className="h-6 w-6" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-800">Your Generated Content Will Appear Here</h4>
+                    <h4 className="text-sm font-bold text-slate-800">Your Tailored Document Will Appear Here</h4>
                     <p className="text-xs text-slate-500 mt-1 max-w-sm leading-relaxed">
-                      Select your mode, fill in the job title & description on the left, and click Generate.
+                      Select your target role on the left and click &quot;Generate&quot; to produce an ATS-aligned resume or letter.
                     </p>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerate}
+                    className="mt-2 text-xs font-semibold rounded-xl text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                  >
+                    Quick Sample Generate
+                  </Button>
                 </div>
               )}
 
               {(status === "analyzing" || status === "generating") && (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-4">
-                  <div className="h-9 w-9 animate-spin rounded-full border-3 border-slate-200 border-t-indigo-600" />
+                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-4">
+                  <div className="relative">
+                    <div className="h-14 w-14 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin" />
+                    <Sparkles className="h-6 w-6 text-indigo-600 absolute inset-0 m-auto animate-pulse" />
+                  </div>
                   <div className="space-y-1">
                     <p className="text-sm font-bold text-slate-900">
-                      {status === "analyzing" ? "Analyzing Job Requirements..." : "Synthesizing Content with Groq AI..."}
+                      {status === "analyzing" ? "Analyzing Job & Skills..." : "Synthesizing Tailored Copy..."}
                     </p>
-                    <p className="text-xs text-slate-500">
-                      Matching skills and formatting bullets without hallucinations.
-                    </p>
+                    <p className="text-xs text-slate-500">Aligning keywords to bypass applicant screening algorithms.</p>
                   </div>
                 </div>
               )}
 
               {status === "completed" && (
-                <div className="flex-1">
-                  <textarea
-                    readOnly
-                    value={outputContent}
-                    className="w-full h-full min-h-[460px] rounded-xl border border-slate-200 bg-slate-50/50 p-4 font-mono text-xs sm:text-sm text-slate-800 leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                  />
+                <div className="space-y-4 flex-1">
+                  {/* Formatted Document View (When Resume & Document tab is selected) */}
+                  {selectedMode === "tailored_resume" && previewTab === "document" ? (
+                    <div
+                      className={`rounded-2xl border p-6 sm:p-8 bg-white shadow-xs transition-all ${
+                        templateTheme === "modern"
+                          ? "border-indigo-200/80 bg-gradient-to-b from-indigo-50/20 to-white"
+                          : templateTheme === "executive"
+                          ? "border-slate-300 font-serif"
+                          : "border-slate-200"
+                      }`}
+                    >
+                      {/* Resume Header with Optional Photo */}
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+                        <div className="flex items-center gap-4">
+                          {includePhoto && (
+                            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full ring-2 ring-indigo-500 shadow-sm">
+                              <img src={profile.avatarUrl} alt={profile.fullName} className="h-full w-full object-cover" />
+                            </div>
+                          )}
+                          <div>
+                            <h2 className="text-2xl font-black tracking-tight text-slate-900">
+                              {profile.fullName}
+                            </h2>
+                            <p className="text-xs font-bold text-indigo-600 tracking-wide mt-0.5">
+                              {jobTitle} • {company} Candidate
+                            </p>
+                            <p className="text-[11px] text-slate-500 mt-1">
+                              {profile.location} | {profile.email} | (555) 234-8901
+                            </p>
+                          </div>
+                        </div>
+
+                        <Badge variant="success" className="shrink-0 text-xs font-bold">
+                          96% ATS Score
+                        </Badge>
+                      </div>
+
+                      {/* Summary */}
+                      <div className="mt-5 space-y-2">
+                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                          Tailored Career Summary
+                        </h4>
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                          Performance-driven {jobTitle} with demonstrated track record delivering reliable,
+                          scalable platforms. Calibrated specifically for {company}&apos;s tech priorities, bringing core competency in {keyHighlights}.
+                        </p>
+                      </div>
+
+                      {/* Achievements */}
+                      <div className="mt-5 space-y-2">
+                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                          Targeted Achievements & Experience
+                        </h4>
+                        <ul className="space-y-1.5 text-xs text-slate-600 list-disc pl-4">
+                          <li>
+                            <strong className="text-slate-800">High-Impact Delivery:</strong> Architected and deployed services supporting millions of monthly requests with 99.99% uptime.
+                          </li>
+                          <li>
+                            <strong className="text-slate-800">Optimization:</strong> Reduced core application latency and improved response times by over 35%.
+                          </li>
+                          <li>
+                            <strong className="text-slate-800">Collaboration:</strong> Partnered with cross-functional product and engineering leaders to drive rapid execution.
+                          </li>
+                        </ul>
+                      </div>
+
+                      {/* Technical Skills */}
+                      <div className="mt-5 space-y-2">
+                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                          Core Competencies
+                        </h4>
+                        <div className="flex flex-wrap gap-1.5">
+                          {profile.skills.map((sk) => (
+                            <span
+                              key={sk}
+                              className="rounded-lg bg-indigo-50 border border-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-800"
+                            >
+                              {sk}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Plain Text / Markdown View */
+                    <Textarea
+                      readOnly
+                      rows={18}
+                      value={outputContent}
+                      className="font-mono text-xs leading-relaxed bg-slate-50 border-slate-200 rounded-xl p-4 text-slate-800 focus:outline-none"
+                    />
+                  )}
                 </div>
               )}
             </CardContent>

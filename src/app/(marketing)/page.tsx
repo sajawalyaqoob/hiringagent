@@ -1,5 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   CheckCircle2,
@@ -87,66 +88,75 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right Column: Visual Match Card That Anyone Understands */}
-            <div className="lg:col-span-5 max-w-lg mx-auto lg:max-w-none w-full">
-              <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-xl shadow-slate-200/50 space-y-5">
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Sample Match</span>
-                    <h3 className="text-lg font-bold text-slate-900">Software Engineer</h3>
-                    <p className="text-xs text-indigo-600 font-semibold">TechCorp • Remote ($140k - $160k)</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="inline-block px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-extrabold">
-                      94% Match
+            {/* Right Column: Visual 3D Hero Illustration & Live Match Card */}
+            <div className="lg:col-span-5 max-w-lg mx-auto lg:max-w-none w-full relative">
+              <div className="relative rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-2xl shadow-indigo-200/40">
+                {/* 3D Illustration Graphic */}
+                <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-900">
+                  <Image
+                    src="/images/hero-illustration.jpg"
+                    alt="HireBoost AI Real-time Job Matching and Score Calibration"
+                    fill
+                    priority
+                    className="object-cover transition-transform duration-500 hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent pointer-events-none" />
+                  <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-white">
+                    <span className="text-xs font-black tracking-wide drop-shadow-md">
+                      Interactive Match Calibrator
                     </span>
-                    <p className="text-[10px] text-slate-400 mt-0.5">High compatibility</p>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/90 text-white text-[11px] font-extrabold shadow-sm">
+                      98% Fit
+                    </span>
                   </div>
                 </div>
 
-                {/* Match Progress Bar */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-semibold text-slate-700">
-                    <span>Keyword & Skill Alignment</span>
-                    <span className="text-emerald-600">94%</span>
-                  </div>
-                  <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-indigo-600 to-emerald-500 rounded-full transition-all duration-500" style={{ width: "94%" }} />
-                  </div>
-                </div>
-
-                {/* Skills tags */}
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-slate-700">Matching Skills Found in Your Resume:</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {["TypeScript", "React", "Node.js", "PostgreSQL", "REST APIs"].map((s) => (
-                      <span key={s} className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/80 text-xs font-medium">
-                        ✓ {s}
+                {/* Glassmorphic Interactive Preview Card */}
+                <div className="p-5 sm:p-6 space-y-4 bg-white/95 backdrop-blur-md">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Live Opportunity Preview
                       </span>
-                    ))}
-                    <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-medium">
-                      + Docker (Suggested)
-                    </span>
+                      <h3 className="text-base font-bold text-slate-900">Senior Full-Stack Engineer</h3>
+                      <p className="text-xs text-indigo-600 font-semibold">Stripe / Global Remote • $185k - $235k</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="inline-block px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-black">
+                        ✓ Top Match
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* AI Recommendation */}
-                <div className="rounded-xl bg-indigo-50/60 border border-indigo-100 p-3.5 text-xs text-slate-700 leading-relaxed">
-                  <p className="font-bold text-indigo-900 flex items-center gap-1.5 mb-1">
-                    <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
-                    AI Instant Recommendation:
-                  </p>
-                  "We added your Docker container experience to your resume bullets. This increases your ATS match score to 99%."
-                </div>
+                  {/* Skills tags */}
+                  <div className="space-y-1.5">
+                    <div className="flex flex-wrap gap-1.5">
+                      {["TypeScript", "React", "Next.js", "Python", "PostgreSQL"].map((s) => (
+                        <span
+                          key={s}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/80 text-xs font-semibold"
+                        >
+                          ✓ {s}
+                        </span>
+                      ))}
+                      <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold">
+                        ⚡ 1-Click LinkedIn Search
+                      </span>
+                    </div>
+                  </div>
 
-                {/* Tailor button */}
-                <Link href="/dashboard/create" className="block">
-                  <Button variant="primary" size="md" className="w-full justify-center font-bold text-sm">
-                    Generate Tailored Resume (Instant)
-                    <ArrowRight className="h-4 w-4 ml-1.5" />
-                  </Button>
-                </Link>
+                  {/* Action Link */}
+                  <Link href="/onboarding" className="block pt-1">
+                    <Button
+                      variant="primary"
+                      size="md"
+                      className="w-full justify-center font-bold text-sm rounded-xl shadow-sm bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      Personalize My Job Matches Free
+                      <ArrowRight className="h-4 w-4 ml-1.5" />
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

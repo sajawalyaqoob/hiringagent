@@ -48,6 +48,24 @@ const routeTitles: Record<string, { title: string; subtitle: string }> = {
 export function DashboardHeader({ onToggleSidebar }: HeaderProps) {
   const pathname = usePathname();
   const [notificationOpen, setNotificationOpen] = React.useState(false);
+  const [profile, setProfile] = React.useState({
+    name: "Alex Morgan",
+    avatarUrl: "/images/default-avatar.jpg",
+  });
+
+  React.useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.data?.profile) {
+          setProfile({
+            name: d.data.profile.fullName || "User",
+            avatarUrl: d.data.profile.avatarUrl || "/images/default-avatar.jpg",
+          });
+        }
+      })
+      .catch(() => null);
+  }, []);
 
   // Match title
   const currentRoute = Object.keys(routeTitles)
@@ -158,8 +176,14 @@ export function DashboardHeader({ onToggleSidebar }: HeaderProps) {
         {/* View Profile Shortcut */}
         <Link href="/dashboard/profile">
           <div className="flex items-center gap-2 border-l border-slate-200 pl-3 hover:opacity-80 transition-opacity">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center text-xs font-bold shadow-xs">
-              AM
+            <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full ring-1 ring-slate-200 bg-slate-100">
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" />
+              ) : (
+                <div className="h-full w-full bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                  {profile.name.slice(0, 2).toUpperCase()}
+                </div>
+              )}
             </div>
           </div>
         </Link>

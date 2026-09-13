@@ -51,7 +51,7 @@ export default function SignupPage() {
         return;
       }
 
-      router.push("/dashboard/profile");
+      router.push("/onboarding");
     } catch {
       setError("An unexpected network error occurred. Please try again.");
       setLoading(false);
@@ -59,7 +59,7 @@ export default function SignupPage() {
   };
 
   return (
-    <Card className="border-[#d5d9d9] shadow-sm">
+    <Card className="max-w-md mx-auto border-[#d5d9d9] shadow-sm">
       <CardHeader className="space-y-1">
         <CardTitle className="text-xl font-bold text-[#0f1111]">Create Your Career Profile</CardTitle>
         <CardDescription>

@@ -33,6 +33,8 @@ export interface Profile {
   careerLevel: CareerLevel;
   employmentStatus: EmploymentStatus;
   completionPercentage: number;
+  avatarUrl?: string;
+  bio?: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -21,6 +21,8 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 
 export default function DashboardOverviewPage() {
+  const [userName, setUserName] = React.useState("Candidate");
+  const [userRole, setUserRole] = React.useState("Software Engineer");
   const [profileCompletion, setProfileCompletion] = React.useState(88);
   const [matchingCount, setMatchingCount] = React.useState(14);
   const [applicationsCount, setApplicationsCount] = React.useState(5);
@@ -37,8 +39,17 @@ export default function DashboardOverviewPage() {
           fetch("/api/applications").then((r) => r.json()).catch(() => null),
         ]);
 
-        if (profRes?.success && profRes.data?.completion) {
-          setProfileCompletion(profRes.data.completion.percentage);
+        if (profRes?.success && profRes.data?.profile) {
+          const p = profRes.data.profile;
+          if (p.fullName) {
+            setUserName(p.fullName.split(" ")[0]);
+          }
+          if (p.currentJobTitle) {
+            setUserRole(p.currentJobTitle);
+          }
+          if (profRes.data.completion) {
+            setProfileCompletion(profRes.data.completion.percentage);
+          }
         }
 
         if (jobsRes?.success && Array.isArray(jobsRes.data)) {
@@ -124,7 +135,7 @@ export default function DashboardOverviewPage() {
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                Welcome back, Alex! 👋
+                Welcome back, {userName}! 👋
               </h1>
               <Badge variant="success" className="gap-1 font-semibold">
                 <CheckCircle2 className="h-3 w-3" />
@@ -132,7 +143,8 @@ export default function DashboardOverviewPage() {
               </Badge>
             </div>
             <p className="text-sm text-slate-500 max-w-2xl leading-relaxed">
-              Here is your current career progress. You have <span className="font-semibold text-slate-800">{matchingCount} job opportunities</span> with high compatibility.
+              Here is your current career progress as <span className="font-semibold text-slate-800">{userRole}</span>. You have{" "}
+              <span className="font-semibold text-slate-800">{matchingCount} live positions</span> calibrated to your skills.
             </p>
           </div>
 

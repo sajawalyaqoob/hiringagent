@@ -20,38 +20,90 @@ export interface JobProvider {
 
 export class DefaultJobProvider implements JobProvider {
   name = "DefaultJobProvider";
+  private cache: { timestamp: number; jobs: Job[] } | null = null;
+  private CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-  async searchJobs(criteria: JobSearchCriteria): Promise<Job[]> {
-    const apiKey = process.env.JOB_API_KEY || process.env.JSEARCH_API_KEY || process.env.RAPIDAPI_KEY;
-
-    if (apiKey && apiKey.trim() !== "") {
-      try {
-        const query = encodeURIComponent(`${criteria.keywords || "Software Engineer"} in ${criteria.location || "Remote"}`);
-        const url = `https://jsearch.p.rapidapi.com/search?query=${query}&page=${criteria.page || 1}&num_pages=1`;
-
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            "x-rapidapi-key": apiKey,
-            "x-rapidapi-host": "jsearch.p.rapidapi.com",
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const rawJobs = data?.data || [];
-
-          if (Array.isArray(rawJobs) && rawJobs.length > 0) {
-            return this.normalizeExternalJobs(rawJobs);
-          }
-        }
-      } catch (err) {
-        console.warn("[JobProvider] External job API call failed, using local provider fallback:", err);
-      }
+  async fetchLiveJobs(): Promise<Job[]> {
+    if (this.cache && Date.now() - this.cache.timestamp < this.CACHE_TTL) {
+      return this.cache.jobs;
     }
 
-    // Fallback Local Provider filtering
-    let results = [...mockJobs];
+    try {
+      const res = await fetch("https://www.arbeitnow.com/api/job-board-api", {
+        headers: { Accept: "application/json" },
+        next: { revalidate: 300 },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const rawList = data?.data || [];
+        if (Array.isArray(rawList) && rawList.length > 0) {
+          const normalized = this.normalizeArbeitnowJobs(rawList);
+          this.cache = { timestamp: Date.now(), jobs: normalized };
+          return normalized;
+        }
+      }
+    } catch (err) {
+      console.warn("[JobProvider] Live Arbeitnow API fetch failed, falling back to local dataset:", err);
+    }
+
+    return mockJobs;
+  }
+
+  private normalizeArbeitnowJobs(rawList: any[]): Job[] {
+    return rawList.map((item, idx) => {
+      const title = item.title || "Software Specialist";
+      const company = item.company_name || "Tech Solutions Corp";
+      const isRemote = Boolean(item.remote);
+      const location = isRemote ? "Remote Worldwide" : item.location || "Global";
+      const tags = Array.isArray(item.tags) && item.tags.length > 0 ? item.tags : ["Engineering", "Cloud", "Agile"];
+      
+      const titleLower = title.toLowerCase();
+      let seniority: "entry" | "mid" | "senior" | "lead" | "executive" = "mid";
+      if (titleLower.includes("senior") || titleLower.includes("sr.")) seniority = "senior";
+      else if (titleLower.includes("lead") || titleLower.includes("staff") || titleLower.includes("principal")) seniority = "lead";
+      else if (titleLower.includes("junior") || titleLower.includes("entry") || titleLower.includes("intern")) seniority = "entry";
+      else if (titleLower.includes("director") || titleLower.includes("head") || titleLower.includes("vp")) seniority = "executive";
+
+      const baseSalary = seniority === "lead" ? 175000 : seniority === "senior" ? 145000 : seniority === "entry" ? 85000 : 115000;
+
+      // Clean HTML tags from description if needed
+      const cleanDesc = (item.description || "")
+        .replace(/<[^>]*>?/gm, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      return {
+        id: `live_${item.slug || idx}_${Date.now().toString(36)}`,
+        title,
+        company,
+        location,
+        workplaceType: isRemote ? "remote" : "hybrid",
+        employmentType: "full_time",
+        seniority,
+        experienceYearsRequired: seniority === "lead" ? 7 : seniority === "senior" ? 5 : seniority === "entry" ? 1 : 3,
+        salaryMin: baseSalary,
+        salaryMax: Math.round(baseSalary * 1.35),
+        salaryCurrency: "USD",
+        description: cleanDesc || `${title} at ${company}. Fast-paced technology team seeking passionate talent.`,
+        requiredSkills: tags,
+        preferredSkills: ["Git", "System Architecture", "Collaboration"],
+        responsibilities: [
+          `Architect and ship high-impact features for ${company}.`,
+          "Partner with cross-functional teams to define technical strategy.",
+          "Write clean, resilient code and drive continuous improvements.",
+        ],
+        educationRequirement: "Bachelor's degree in CS, STEM or equivalent practical experience",
+        sourceUrl: item.url || undefined,
+        postedAt: item.created_at ? new Date(item.created_at * 1000).toISOString() : new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      };
+    });
+  }
+
+  async searchJobs(criteria: JobSearchCriteria): Promise<Job[]> {
+    const liveJobs = await this.fetchLiveJobs();
+    let results = liveJobs.length > 0 ? liveJobs : [...mockJobs];
 
     if (criteria.keywords) {
       const q = criteria.keywords.toLowerCase();
