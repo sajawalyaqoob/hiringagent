@@ -15,6 +15,7 @@ import {
   X,
   Check,
   Sparkles,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -420,6 +421,17 @@ export default function ResumesPage() {
                         Set Primary
                       </Button>
                     )}
+
+                    <a
+                      href={`/${resume.fileName}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 h-8 px-2.5 rounded-lg border border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100/60 transition-colors"
+                      title="Open PDF Document"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      <span>View PDF</span>
+                    </a>
 
                     <Link href="/dashboard/resume/analyze">
                       <Button variant="primary" size="sm" className="text-xs font-bold h-8 px-2.5">
