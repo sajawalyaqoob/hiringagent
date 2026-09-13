@@ -44,7 +44,7 @@ export class DefaultAIProvider implements IAIProvider {
       apiKey,
       modelName:
         provider === "groq"
-          ? "llama-3.3-70b-versatile"
+          ? (process.env.GROQ_MODEL || "groq/compound-mini")
           : provider === "gemini"
           ? "gemini-1.5-flash"
           : provider === "openai"
@@ -189,12 +189,13 @@ export class DefaultAIProvider implements IAIProvider {
         },
         signal: controller.signal,
         body: JSON.stringify({
-          model: this.config.modelName || "llama-3.3-70b-versatile",
+          model: this.config.modelName || process.env.GROQ_MODEL || "groq/compound-mini",
           messages: [
             { role: "system", content: fullSystemInstruction },
             { role: "user", content: prompt },
           ],
           temperature: 0.2,
+          max_tokens: 1024,
         }),
       });
 
