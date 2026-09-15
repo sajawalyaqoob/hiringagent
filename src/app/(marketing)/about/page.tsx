@@ -14,7 +14,7 @@ export default function AboutPage() {
             Building Serious Tools for Serious Careers
           </h1>
           <p className="text-xs sm:text-sm text-gray-300 max-w-2xl mx-auto leading-relaxed">
-            HireBoost AI was founded on the belief that modern job searching shouldn't be a random numbers game of keyword bingo and generic chatbot fluff.
+            HireBoost AI was founded on the belief that modern job searching shouldn&apos;t be a random numbers game of keyword bingo and generic chatbot fluff.
           </p>
         </div>
       </section>

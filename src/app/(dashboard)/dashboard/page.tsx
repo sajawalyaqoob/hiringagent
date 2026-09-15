@@ -22,6 +22,8 @@ import {
   GitBranch,
   ChevronRight,
   Eye,
+  MapPin,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,13 +39,13 @@ export default function DashboardOverviewPage() {
 
   // Full candidate data
   const [profile, setProfile] = React.useState<any>({
-    fullName: "Muhammad Ali",
-    professionalHeadline: "BS Computer Science Student | Full Stack Developer | DevOps Enthusiast",
-    email: "aliofficialpk63@gmail.com",
-    phone: "03020048966",
-    location: "Lahore, Pakistan",
-    githubUrl: "github.com/aliofficialpk",
-    avatarUrl: "/images/default-avatar.jpg",
+    fullName: "",
+    professionalHeadline: "",
+    email: "",
+    phone: "",
+    location: "",
+    githubUrl: "",
+    avatarUrl: "",
   });
   const [educationList, setEducationList] = React.useState<any[]>([]);
   const [experienceList, setExperienceList] = React.useState<any[]>([]);

@@ -39,14 +39,26 @@ interface ParsedResumeData {
   };
 }
 
+interface ResumeItem {
+  id: string;
+  title: string;
+  fileName: string;
+  fileSize: number;
+  fileType: "pdf" | "docx";
+  isPrimary: boolean;
+  parseStatus: string;
+  atsScore: number;
+  createdAt: string;
+}
+
 export default function ResumesPage() {
-  const [resumes, setResumes] = React.useState([
+  const [resumes, setResumes] = React.useState<ResumeItem[]>([
     {
       id: "res_invozone",
       title: "Master CV — InvoZone Agency Standard (Verified)",
       fileName: "InvoZone_Professional_Standard_CV.pdf",
       fileSize: 442658,
-      fileType: "pdf" as const,
+      fileType: "pdf",
       isPrimary: true,
       parseStatus: "completed",
       atsScore: 98,
@@ -57,7 +69,7 @@ export default function ResumesPage() {
       title: "Full-Stack Engineer & Cloud Infrastructure Specialist",
       fileName: "FullStack_Cloud_Engineer_Resume.pdf",
       fileSize: 198420,
-      fileType: "pdf" as const,
+      fileType: "pdf",
       isPrimary: false,
       parseStatus: "completed",
       atsScore: 94,
@@ -151,12 +163,12 @@ export default function ResumesPage() {
     setApplyingChanges(true);
 
     // Add document to list
-    const newDoc = {
+    const newDoc: ResumeItem = {
       id: `res_${Date.now()}`,
       title: parsedResult.fileName.replace(/\.[^/.]+$/, ""),
       fileName: parsedResult.fileName,
       fileSize: parsedResult.fileSize,
-      fileType: parsedResult.fileName.endsWith(".docx") ? ("docx" as const) : ("pdf" as const),
+      fileType: parsedResult.fileName.endsWith(".docx") ? "docx" : "pdf",
       isPrimary: false,
       parseStatus: "completed",
       atsScore: parsedResult.extracted?.atsScore || 88,

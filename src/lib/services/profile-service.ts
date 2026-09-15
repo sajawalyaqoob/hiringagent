@@ -49,6 +49,7 @@ export class ProfileService {
     skills: Skill[];
     projects: Project[];
     certifications: Certification[];
+    languages?: Language[];
     jobPreferences?: JobPreference | null;
   }): ProfileCompletionResult {
     let score = 0;
