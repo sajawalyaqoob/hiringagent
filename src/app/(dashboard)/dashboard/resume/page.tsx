@@ -52,22 +52,23 @@ interface ResumeItem {
 }
 
 export default function ResumesPage() {
+  const [userProfile, setUserProfile] = React.useState<any>(null);
   const [resumes, setResumes] = React.useState<ResumeItem[]>([
     {
-      id: "res_invozone",
-      title: "Master CV — InvoZone Agency Standard (Verified)",
-      fileName: "InvoZone_Professional_Standard_CV.pdf",
-      fileSize: 442658,
+      id: "res_primary",
+      title: "Master CV — Executive Standard",
+      fileName: "Executive_Master_CV.pdf",
+      fileSize: 342658,
       fileType: "pdf",
       isPrimary: true,
       parseStatus: "completed",
       atsScore: 98,
-      createdAt: "2026-06-07",
+      createdAt: new Date().toISOString().split("T")[0],
     },
     {
       id: "res_01",
-      title: "Full-Stack Engineer & Cloud Infrastructure Specialist",
-      fileName: "FullStack_Cloud_Engineer_Resume.pdf",
+      title: "Tailored Candidate Profile CV",
+      fileName: "Tailored_Professional_Resume.pdf",
       fileSize: 198420,
       fileType: "pdf",
       isPrimary: false,
@@ -94,6 +95,31 @@ export default function ResumesPage() {
   const [successMsg, setSuccessMsg] = React.useState<string | null>(null);
 
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  React.useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.data?.profile) {
+          const p = d.data.profile;
+          setUserProfile(p);
+          if (p.fullName) {
+            setResumes((prev) =>
+              prev.map((r, idx) =>
+                idx === 0
+                  ? {
+                      ...r,
+                      title: `${p.fullName} — Executive Master CV`,
+                      fileName: `${p.fullName.replace(/\s+/g, "_")}_Executive_CV.pdf`,
+                    }
+                  : r
+              )
+            );
+          }
+        }
+      })
+      .catch(() => null);
+  }, []);
 
   const handleSetPrimary = (id: string) => {
     setResumes((prev) =>
@@ -162,7 +188,6 @@ export default function ResumesPage() {
     if (!parsedResult) return;
     setApplyingChanges(true);
 
-    // Add document to list
     const newDoc: ResumeItem = {
       id: `res_${Date.now()}`,
       title: parsedResult.fileName.replace(/\.[^/.]+$/, ""),
@@ -183,7 +208,6 @@ export default function ResumesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Hidden File Input */}
       <input
         type="file"
         ref={fileInputRef}
@@ -201,10 +225,10 @@ export default function ResumesPage() {
           </p>
         </div>
 
-        <Link href="/dashboard/resume/analyze">
-          <Button variant="outline" size="sm" className="font-bold text-xs gap-1.5">
-            <ScanLine className="h-3.5 w-3.5 text-[#f08804]" />
-            <span>Launch ATS Scanner</span>
+        <Link href="/dashboard/create">
+          <Button variant="outline" size="sm" className="font-bold text-xs gap-1.5 border-indigo-200 text-indigo-700 bg-indigo-50/50 hover:bg-indigo-100">
+            <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+            <span>Open Executive CV Studio</span>
           </Button>
         </Link>
       </div>
@@ -236,7 +260,7 @@ export default function ResumesPage() {
       )}
 
       {/* Upload Dropzone */}
-      <div className="rounded-xs border-2 border-dashed border-[#d5d9d9] bg-white p-6 text-center hover:border-[#f08804] transition-colors">
+      <div className="rounded-xs border-2 border-dashed border-[#d5d9d9] bg-white p-6 text-center hover:border-indigo-500 transition-colors">
         <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#f8f9fa] border border-[#d5d9d9] text-[#565959] mb-3">
           <UploadCloud className="h-5 w-5" />
         </div>
@@ -252,7 +276,7 @@ export default function ResumesPage() {
             size="sm"
             onClick={() => fileInputRef.current?.click()}
             isLoading={uploading}
-            className="font-bold text-xs"
+            className="font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
           >
             <Plus className="h-3.5 w-3.5 mr-1" />
             {uploading ? "Parsing Document..." : "Select Resume File to Upload"}
@@ -260,12 +284,12 @@ export default function ResumesPage() {
         </div>
       </div>
 
-      {/* Extracted Information & Proposed Changes Review Drawer/Modal */}
+      {/* Parsed Result Drawer */}
       {parsedResult && (
-        <div className="border border-[#f08804] bg-[#fffcf5] p-5 rounded-xs space-y-4 shadow-sm">
-          <div className="flex items-center justify-between border-b border-[#f3e5ab] pb-3">
+        <div className="border border-indigo-300 bg-[#f4f7ff] p-5 rounded-xs space-y-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-indigo-200 pb-3">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-[#f08804]" />
+              <Sparkles className="h-5 w-5 text-indigo-600" />
               <div>
                 <h3 className="text-sm font-bold text-[#0f1111]">
                   Resume Parsed: Review Proposed Profile Updates
@@ -287,7 +311,6 @@ export default function ResumesPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            {/* Extracted Personal Info */}
             <div className="bg-white p-3.5 border border-[#d5d9d9] rounded-xs space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-[#0f1111] uppercase tracking-wider text-[11px]">
@@ -297,7 +320,7 @@ export default function ResumesPage() {
                   type="checkbox"
                   checked={selectedChanges.personal}
                   onChange={(e) => setSelectedChanges((s) => ({ ...s, personal: e.target.checked }))}
-                  className="accent-[#f08804]"
+                  className="accent-indigo-600"
                 />
               </div>
               <div className="space-y-1 text-[#333]">
@@ -308,7 +331,6 @@ export default function ResumesPage() {
               </div>
             </div>
 
-            {/* Extracted Skills */}
             <div className="bg-white p-3.5 border border-[#d5d9d9] rounded-xs space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-[#0f1111] uppercase tracking-wider text-[11px]">
@@ -318,7 +340,7 @@ export default function ResumesPage() {
                   type="checkbox"
                   checked={selectedChanges.skills}
                   onChange={(e) => setSelectedChanges((s) => ({ ...s, skills: e.target.checked }))}
-                  className="accent-[#f08804]"
+                  className="accent-indigo-600"
                 />
               </div>
               <div className="flex flex-wrap gap-1.5 pt-1">
@@ -331,7 +353,7 @@ export default function ResumesPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#f3e5ab]">
+          <div className="flex justify-end gap-2 pt-2 border-t border-indigo-200">
             <Button
               variant="outline"
               size="sm"
@@ -345,7 +367,7 @@ export default function ResumesPage() {
               size="sm"
               onClick={handleAcceptParsedChanges}
               isLoading={applyingChanges}
-              className="text-xs font-bold gap-1"
+              className="text-xs font-bold gap-1 bg-indigo-600 hover:bg-indigo-700 text-white"
             >
               <Check className="h-3.5 w-3.5" />
               <span>Accept & Apply to Profile</span>
@@ -356,13 +378,12 @@ export default function ResumesPage() {
 
       {/* Resume Inventory List */}
       <div className="space-y-3">
-        <h3 className="text-sm font-bold text-[#0f1111]">Uploaded Resumes ({resumes.length})</h3>
+        <h3 className="text-sm font-bold text-[#0f1111]">Active Resumes ({resumes.length})</h3>
 
         <div className="grid grid-cols-1 gap-3">
           {resumes.map((resume) => (
             <Card key={resume.id} className="border-[#d5d9d9] bg-white shadow-2xs">
               <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                {/* Left info */}
                 <div className="flex items-start gap-3">
                   <div className="h-10 w-10 shrink-0 rounded-xs bg-[#f8f9fa] border border-[#d5d9d9] flex items-center justify-center text-[#131921]">
                     <FileText className="h-5 w-5" />
@@ -375,7 +396,7 @@ export default function ResumesPage() {
                           type="text"
                           value={editTitle}
                           onChange={(e) => setEditTitle(e.target.value)}
-                          className="h-7 text-xs rounded-xs border border-[#f08804] px-2 font-bold text-[#0f1111]"
+                          className="h-7 text-xs rounded-xs border border-indigo-500 px-2 font-bold text-[#0f1111]"
                         />
                         <button
                           onClick={() => handleSaveRename(resume.id)}
@@ -394,7 +415,7 @@ export default function ResumesPage() {
                       <div className="flex items-center gap-2">
                         <h4 className="text-sm font-bold text-[#0f1111]">{resume.title}</h4>
                         {resume.isPrimary && (
-                          <span className="rounded-xs bg-[#f08804] text-[#0f1111] px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider">
+                          <span className="rounded-xs bg-indigo-600 text-white px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider">
                             Primary
                           </span>
                         )}
@@ -408,12 +429,11 @@ export default function ResumesPage() {
                       <span>•</span>
                       <span>Uploaded {formatDate(resume.createdAt)}</span>
                       <span>•</span>
-                      <Badge variant="success">Parsed 100%</Badge>
+                      <Badge variant="success">Verified</Badge>
                     </div>
                   </div>
                 </div>
 
-                {/* Right score and action buttons */}
                 <div className="flex items-center gap-3 shrink-0 sm:border-l sm:border-[#e5e7eb] sm:pl-4">
                   <div className="text-right mr-2">
                     <div className="text-xl font-black text-[#067d62]">{resume.atsScore}</div>
@@ -429,25 +449,15 @@ export default function ResumesPage() {
                         className="text-xs font-semibold h-8 px-2"
                         title="Set as active primary document"
                       >
-                        <Star className="h-3.5 w-3.5 mr-1 text-[#f08804]" />
+                        <Star className="h-3.5 w-3.5 mr-1 text-indigo-600" />
                         Set Primary
                       </Button>
                     )}
 
-                    <a
-                      href={`/${resume.fileName}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 h-8 px-2.5 rounded-lg border border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100/60 transition-colors"
-                      title="Open PDF Document"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      <span>View PDF</span>
-                    </a>
-
-                    <Link href="/dashboard/resume/analyze">
-                      <Button variant="primary" size="sm" className="text-xs font-bold h-8 px-2.5">
-                        Breakdown
+                    <Link href="/dashboard/create">
+                      <Button variant="primary" size="sm" className="text-xs font-bold h-8 px-2.5 bg-indigo-600 hover:bg-indigo-700 text-white">
+                        <Eye className="h-3.5 w-3.5 mr-1" />
+                        Open Studio
                       </Button>
                     </Link>
 

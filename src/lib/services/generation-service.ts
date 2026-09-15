@@ -1,6 +1,8 @@
 import { isSupabaseConfigured, createServerSupabaseClient } from "../supabase/server";
 import { mockGenerations } from "@/lib/server/mock-db";
 import { DefaultAIProvider } from "../ai/provider";
+import { profileService, type FullProfileData } from "./profile-service";
+import { getDomainById } from "../config/domains";
 import type { Generation, GenerationType } from "@/types/database";
 
 export interface GenerateInputParams {
@@ -8,10 +10,12 @@ export interface GenerateInputParams {
   jobId?: string;
   jobTitle: string;
   company: string;
-  jobDescription: string;
+  jobDescription?: string;
   tone?: "professional" | "confident" | "enthusiastic" | "concise";
   keyHighlights?: string;
   recipientName?: string;
+  candidateName?: string;
+  fullProfile?: FullProfileData;
 }
 
 export class GenerationService {
@@ -52,124 +56,168 @@ export class GenerationService {
 
   async generateArtifact(params: GenerateInputParams, userId: string = "usr_mock_01"): Promise<Generation> {
     const tone = params.tone || "professional";
-    const recipient = params.recipientName || "Hiring Team";
+    const recipient = params.recipientName || "Hiring Manager";
     let generatedOutput = "";
+
+    // Load actual user profile from DB if not provided
+    const userProfileData: FullProfileData =
+      params.fullProfile || (await profileService.getFullProfile(userId));
+    const p = userProfileData.profile;
+    const candidateName = params.candidateName || p.fullName || "Candidate Name";
+    const domainObj = getDomainById(p.industry || "cs_it");
+
+    const skillsString = userProfileData.skills.map((s) => s.name).join(", ");
+    const expString = userProfileData.experiences
+      .map(
+        (e) =>
+          `${e.jobTitle} at ${e.company} (${e.startDate || ""} - ${e.endDate || "Present"}):\n${(e.responsibilities || []).map((r) => `  • ${r}`).join("\n")}`
+      )
+      .join("\n\n");
+    const eduString = userProfileData.education
+      .map((e) => `${e.degree} — ${e.institution} (${e.startDate || ""} - ${e.endDate || ""})`)
+      .join("\n");
 
     if (this.aiProvider.getActiveProvider() !== "mock") {
       try {
-        const livePrompt = `You are generating a tailored ${params.type.replace(/_/g, " ")} for a candidate applying to:
+        const livePrompt = `You are an expert career consultant generating a tailored ${params.type.replace(/_/g, " ")} for a candidate in the field of "${domainObj.label}".
+
+CANDIDATE DETAILS:
+Full Name: ${candidateName}
+Career Domain: ${domainObj.label}
+Professional Headline: ${p.professionalHeadline || domainObj.defaultHeadline}
+Current / Desired Job Title: ${p.currentJobTitle || domainObj.defaultJobTitle}
+Years of Experience: ${p.yearsOfExperience || 0}
+Location: ${p.location || "Remote"}
+Email: ${p.email || ""}
+Phone: ${p.phone || ""}
+LinkedIn: ${p.linkedInUrl || ""}
+GitHub / Portfolio: ${p.githubUrl || p.portfolioUrl || ""}
+Executive Summary / Bio: ${p.bio || ""}
+
+VERIFIED SKILLS:
+${skillsString || "Core Domain Competencies"}
+
+WORK HISTORY:
+${expString || "Relevant professional experience in " + domainObj.label}
+
+EDUCATION:
+${eduString || "Academic degree and qualifications"}
+
+TARGET OPPORTUNITY:
 Job Title: ${params.jobTitle}
-Company: ${params.company}
+Target Company: ${params.company}
 Recipient: ${recipient}
 Tone: ${tone}
-Job Description Context:
-${params.jobDescription || "High-performance platform engineering role"}
+Job Description / Context:
+${params.jobDescription || `Role for ${params.jobTitle} at ${params.company}`}
 
-Candidate Highlights & Achievements:
-${params.keyHighlights || "Experienced full-stack & systems engineer with verified expertise in TypeScript, Next.js, Go, PostgreSQL, Kafka, and Cloud Infrastructure."}
+Additional Highlights:
+${params.keyHighlights || "Focus on domain expertise, quantifiable accomplishments, and seamless alignment."}
 
-Requirements:
-- Format cleanly in Markdown.
-- Tailor specifically to ${params.company} and ${params.jobTitle}.
-- DO NOT invent fake past company names or unverified degrees.
-- Focus on high-impact quantifiable outcomes and active verbs.`;
+MANDATORY RULES:
+1. Format output cleanly in Markdown.
+2. Tailor SPECIFICALLY to candidate's field (${domainObj.label}) and target company (${params.company}).
+3. DO NOT invent fake companies, degrees, or licenses not listed in candidate context.
+4. Highlight active verbs, key results, and domain skills.`;
 
-        generatedOutput = await this.aiProvider.generateText(livePrompt);
+        const systemPrompt = `You are Groq AI Tailor operating under strict Zero-Hallucination rules for HireBoost AI. Adapt content strictly to candidate field (${domainObj.label}).`;
+
+        generatedOutput = await this.aiProvider.generateText(livePrompt, systemPrompt);
       } catch (aiErr) {
-        console.warn("[GenerationService] Live AI generation failed, falling back to curated template:", aiErr);
+        console.warn("[GenerationService] Live AI generation failed, using dynamic candidate fallback:", aiErr);
       }
     }
 
     if (!generatedOutput) {
       switch (params.type) {
-      case "tailored_resume":
-        generatedOutput = `# Alex Morgan
-Seattle, WA | alex.morgan@example.com | (555) 234-8901 | linkedin.com/in/alex-morgan-dev
+        case "tailored_resume":
+          generatedOutput = `# ${candidateName}
+${p.location || "Open to Remote"} | ${p.email || "email@example.com"} | ${p.phone || ""} | ${p.linkedInUrl || ""}
 
-## Tailored Profile Summary for ${params.jobTitle} at ${params.company}
-Performance-driven Senior Software Engineer with 6+ years of production experience architecting scalable distributed systems and resilient web applications. Tailored for ${params.company}'s mission, bringing deep proficiency in modern TypeScript/Next.js architectures, high-volume data streaming, and cloud infrastructure optimization.
+## Executive Summary (Tailored for ${params.jobTitle} at ${params.company})
+${p.bio || `${candidateName} is a dedicated ${p.currentJobTitle || domainObj.defaultJobTitle} specializing in ${domainObj.label}. Tailored for ${params.company}, offering proven expertise, commitment to quality, and strong alignment with organizational goals.`}
 
-## Targeted Key Achievements
-- **Architecture & Scale:** Spearheaded distributed event systems processing 45M+ daily requests with 99.99% availability.
-- **Performance:** Reduced PostgreSQL p99 query latency by 38% through index redesign and partition pruning.
-- **Efficiency:** Decreased cloud infrastructure compute costs by $120k annually via container right-sizing.
+## Core Relevant Skills & Competencies
+${skillsString ? skillsString.split(", ").map((s) => `- **${s}**`).join("\n") : `- **Domain Expertise:** ${domainObj.label}\n- **Strategic Execution:** Quality assurance & process management`}
 
-## Core Relevant Technologies
-- **Core:** TypeScript, Next.js, React, Node.js, Go (Golang)
-- **Data & Storage:** PostgreSQL, Redis, Apache Kafka
-- **Infrastructure:** AWS, Kubernetes, Docker, CI/CD GitHub Actions`;
-        break;
+## Professional Experience
+${userProfileData.experiences.length > 0 ? expString : `### ${p.currentJobTitle || domainObj.defaultJobTitle} — Primary Practice
+*2022 – Present*
+- Delivered high-value projects aligned with ${domainObj.label} industry standards.
+- Optimized team workflows and ensured compliance across key deliverables.`}
 
-      case "cover_letter":
-        generatedOutput = `Dear ${recipient},
+## Education & Qualifications
+${userProfileData.education.length > 0 ? eduString : `- **Degree in ${domainObj.label}** | Accredited Institution`}`;
+          break;
 
-I am writing to express my strong enthusiasm for the ${params.jobTitle} role at ${params.company}. Having followed ${params.company}'s engineering momentum, I am eager to contribute my 6+ years of full-stack and systems engineering experience to your high-performing team.
+        case "cover_letter":
+          generatedOutput = `Dear ${recipient},
 
-In my current role at CloudScale Technologies, I architected distributed microservices handling over 45 million daily requests while decreasing p99 database latency by 38%. Prior to that, at Vanguard Digital Labs, I led frontend performance initiatives in Next.js and TypeScript that elevated Lighthouse scores from 54 to 98 across customer analytics products.
+I am writing to express my strong interest in the ${params.jobTitle} position at ${params.company}. With a solid background in ${domainObj.label} and a proven track record as a ${p.currentJobTitle || domainObj.defaultJobTitle}, I am eager to contribute to ${params.company}'s continued success.
 
-${params.keyHighlights ? `Specifically, ${params.keyHighlights}` : `Your focus on reliable, developer-first engineering resonates with my commitment to type safety, clean abstractions, and high system availability.`}
+${userProfileData.experiences.length > 0 ? `In my recent experience as ${userProfileData.experiences[0].jobTitle} at ${userProfileData.experiences[0].company}, I successfully managed core initiatives and delivered quantifiable results.` : `Throughout my career in ${domainObj.label}, I have consistently prioritized high quality, efficiency, and collaborative problem-solving.`}
 
-I would welcome the opportunity to discuss how my technical background and proactive problem-solving can accelerate ${params.company}'s roadmap. Thank you for your time and consideration.
+${params.keyHighlights ? `Specifically, ${params.keyHighlights}` : `Your organization's reputation for excellence strongly aligns with my professional values and expertise in ${skillsString || domainObj.label}.`}
+
+I welcome the opportunity to discuss how my background and dedicated approach can add value to ${params.company}. Thank you for your time and consideration.
 
 Warm regards,
-Alex Morgan
-Seattle, WA | (555) 234-8901 | alex.morgan@example.com`;
-        break;
+${candidateName}
+${p.email || ""} | ${p.phone || ""}`;
+          break;
 
-      case "recruiter_email":
-        generatedOutput = `Subject: Senior Full-Stack Engineer — Alex Morgan for ${params.company} ${params.jobTitle}
+        case "recruiter_email":
+          generatedOutput = `Subject: ${params.jobTitle} Application — ${candidateName} for ${params.company}
 
 Hi ${recipient},
 
-I hope you're having a productive week.
+I hope you are having a productive week.
 
-I noticed ${params.company}'s opening for the ${params.jobTitle} position and wanted to reach out directly. Over the past 6 years, I've specialized in building high-throughput distributed systems in Go and TypeScript, and modern web platforms in Next.js.
+I noticed ${params.company}'s opening for the ${params.jobTitle} position and wanted to reach out directly. As a ${p.currentJobTitle || domainObj.defaultJobTitle} with experience in ${domainObj.label}, I have closely followed ${params.company}'s work and would love to bring my expertise to your team.
 
-At CloudScale Technologies, I recently:
-• Scaled event-driven microservices to handle 45M+ daily events.
-• Reduced PostgreSQL p99 latency by 38% through database indexing and connection pooling.
-• Cut AWS compute spend by $120k/year through automated container optimization.
+Key Highlights of My Profile:
+• Specialized in ${domainObj.label} with core skills in ${skillsString || "strategic execution"}.
+${userProfileData.experiences.length > 0 ? `• Recent position: ${userProfileData.experiences[0].jobTitle} at ${userProfileData.experiences[0].company}.` : ""}
+• Track record of delivering quality outcomes on time.
 
-Given your team's stack and requirements, I would love to connect for 10 minutes to learn more about your current engineering priorities and discuss how my experience aligns.
+I would appreciate 10 minutes to learn more about your current priorities for the ${params.jobTitle} role.
 
 Best regards,
-Alex Morgan
-Portfolio: https://alexmorgan.codes
-LinkedIn: https://linkedin.com/in/alex-morgan-dev`;
-        break;
+${candidateName}
+${p.linkedInUrl || p.email || ""}`;
+          break;
 
-      case "recruiter_message":
-        generatedOutput = `Hi ${recipient} — I saw that ${params.company} is hiring for a ${params.jobTitle}. I'm a Senior Full-Stack & Distributed Systems Engineer with 6+ years of experience scaling Next.js, Go, and PostgreSQL platforms (45M+ daily requests). Would love to connect and share how my background could add value to your engineering team!`;
-        break;
+        case "recruiter_message":
+          generatedOutput = `Hi ${recipient} — I saw that ${params.company} is hiring for a ${params.jobTitle}. As a ${p.currentJobTitle || domainObj.defaultJobTitle} with background in ${domainObj.label}, I would love to connect and share how my experience in ${skillsString ? skillsString.slice(0, 60) : domainObj.label} can support your team!`;
+          break;
 
-      case "linkedin_post":
-        generatedOutput = `🚀 Excited to announce I am actively exploring senior engineering roles!
+        case "linkedin_post":
+          generatedOutput = `🚀 Excited to announce I am exploring new opportunities in ${domainObj.label}!
 
-Over the past 6 years, I've had the privilege of architecting high-throughput distributed pipelines and delightful Next.js web applications, most recently scaling event services to 45M+ daily events and reducing database latency by 38%.
+As a ${p.currentJobTitle || domainObj.defaultJobTitle}, I specialize in delivering high-quality results, leading key initiatives, and applying domain expertise in ${skillsString || domainObj.label}.
 
-I am primarily looking for roles in:
-🔹 Senior / Staff Full-Stack Engineer
-🔹 Senior Distributed Systems & Backend Engineer
-🔹 Focus areas: TypeScript, Next.js, Go, PostgreSQL, Cloud Infrastructure
+Target Roles:
+🔹 ${params.jobTitle}
+🔹 ${p.currentJobTitle || domainObj.defaultJobTitle}
 
-If your team is building impactful developer tooling, fintech, or cloud infrastructure, I'd love to connect!
+If your team or network is looking for a dedicated ${domainObj.label} professional, let's connect!
 
-#SoftwareEngineering #TechCareers #FullStack #OpenToWork #TypeScript #Nextjs`;
-        break;
+#CareerOpportunities #${domainObj.label.replace(/[^a-zA-Z0-9]/g, "")} #OpenToWork`;
+          break;
 
-      case "application_strategy":
-        generatedOutput = `# Application Strategy: ${params.jobTitle} at ${params.company}
+        case "application_strategy":
+          generatedOutput = `# Application Strategy: ${params.jobTitle} at ${params.company}
 
-## 1. High-Impact Match Angles
-- **Match Score:** 94% compatibility with stated requirements.
-- **Top Differentiator:** Highlight hands-on Kafka and Go concurrency experience alongside Next.js full-stack capabilities.
+## 1. Candidate Match Profile
+- **Candidate Field:** ${domainObj.label}
+- **Target Role:** ${params.jobTitle}
+- **Target Company:** ${params.company}
 
 ## 2. Key Action Plan
-1. **Resume Submission:** Use Tailored Version #1 emphasizing p99 query latency metrics and large-scale message streaming.
-2. **Direct Outreach:** Send personalized recruiter email to ${params.company}'s engineering recruitment lead within 24 hours of portal submission.
-3. **Portfolio Presentation:** Ensure StreamQuery open-source repository link is prominent on page 1 of resume.
-4. **Interview Preparation:** Prepare deep dive into distributed transaction isolation levels and multi-region failover.`;
-        break;
+1. **Tailored CV Submission:** Highlight verified skills (${skillsString || "Core Domain Skills"}).
+2. **Direct Outreach:** Send personalized recruiter email to ${recipient} at ${params.company}.
+3. **Interview Preparation:** Prepare 2 concrete examples of project delivery from recent work history.`;
+          break;
       }
     }
 
@@ -187,6 +235,7 @@ If your team is building impactful developer tooling, fintech, or cloud infrastr
         recipientName: params.recipientName,
         jobTitle: params.jobTitle,
         company: params.company,
+        domainField: domainObj.label,
       },
       outputContent: generatedOutput,
       createdAt: new Date().toISOString(),

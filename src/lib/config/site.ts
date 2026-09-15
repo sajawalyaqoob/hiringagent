@@ -1,9 +1,9 @@
 export const siteConfig = {
   name: "TalentForge AI",
   shortName: "TalentForge",
-  tagline: "Autonomous Career Architecture & InvoZone-Standard Application Suite",
+  tagline: "Autonomous Career Architecture & Executive-Standard Application Suite",
   description:
-    "An AI-powered career agent that analyzes your professional experience, matches your skills to market opportunities, and generates InvoZone-standard applications.",
+    "An AI-powered career agent that analyzes your professional experience, matches your skills to market opportunities, and generates executive-standard applications.",
   url: process.env.NEXT_PUBLIC_APP_URL || "https://talentforge.ai",
   ogImage: "https://talentforge.ai/og-image.png",
   links: {

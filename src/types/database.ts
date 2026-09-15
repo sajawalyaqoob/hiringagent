@@ -1,6 +1,14 @@
 export type UserRole = "user" | "admin";
-export type SubscriptionTier = "free" | "professional" | "career_pro";
-export type SubscriptionStatus = "active" | "canceled" | "past_due" | "trialing";
+export type SubscriptionTier = "free" | "weekly" | "monthly" | "professional" | "career_pro";
+export type SubscriptionStatus =
+  | "pending_payment"
+  | "pending_approval"
+  | "active"
+  | "canceled"
+  | "past_due"
+  | "trialing"
+  | "expired"
+  | "rejected";
 
 export interface User {
   id: string;
@@ -9,8 +17,28 @@ export interface User {
   role: UserRole;
   subscriptionTier: SubscriptionTier;
   subscriptionStatus: SubscriptionStatus;
+  subscriptionExpiresAt?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ManualPayment {
+  id: string;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  planId: string;
+  planName: string;
+  amountPkr: number;
+  paymentMethod: string;
+  senderNumber: string;
+  transactionId: string;
+  screenshotUrl: string;
+  status: "pending" | "approved" | "rejected";
+  adminNotes?: string | null;
+  createdAt: string;
+  reviewedAt?: string | null;
+  reviewedBy?: string | null;
 }
 
 export type CareerLevel = "intern" | "entry" | "mid" | "senior" | "lead" | "principal" | "executive";
@@ -325,6 +353,31 @@ export interface Notification {
   isRead: boolean;
   link?: string;
   createdAt: string;
+}
+
+export interface SupportReply {
+  id: string;
+  senderName: string;
+  senderRole: string;
+  message: string;
+  createdAt: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  subject: string;
+  category: string;
+  priority?: "low" | "medium" | "high" | "urgent";
+  status: "open" | "in_progress" | "resolved" | "closed";
+  message: string;
+  adminResponse?: string;
+  respondedAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  replies?: SupportReply[];
 }
 
 export interface AuditLog {

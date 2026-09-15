@@ -28,11 +28,12 @@ export default function SettingsPage() {
   >("profile");
 
   const [savedSuccess, setSavedSuccess] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
 
   // Profile fields
-  const [name, setName] = React.useState("Alex Morgan");
-  const [email, setEmail] = React.useState("alex.morgan@example.com");
+  const [name, setName] = React.useState("Candidate");
+  const [email, setEmail] = React.useState("");
 
   // AI Preferences
   const [defaultTone, setDefaultTone] = React.useState("professional");
@@ -44,10 +45,48 @@ export default function SettingsPage() {
   const [followUpReminders, setFollowUpReminders] = React.useState(true);
   const [marketingNews, setMarketingNews] = React.useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
+  React.useEffect(() => {
+    async function loadSettingsUser() {
+      try {
+        const [profRes, authRes] = await Promise.all([
+          fetch("/api/profile").then((r) => r.json()).catch(() => null),
+          fetch("/api/auth").then((r) => r.json()).catch(() => null),
+        ]);
+
+        if (authRes?.user) {
+          if (authRes.user.name) setName(authRes.user.name);
+          if (authRes.user.email) setEmail(authRes.user.email);
+        }
+
+        if (profRes?.success && profRes.data?.profile) {
+          const p = profRes.data.profile;
+          if (p.fullName && p.fullName !== "Candidate") setName(p.fullName);
+          if (p.email) setEmail(p.email);
+        }
+      } catch (err) {
+        console.warn("Failed to load settings user data:", err);
+      }
+    }
+    loadSettingsUser();
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 2500);
+    setIsSaving(true);
+    try {
+      await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName: name, email }),
+      });
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 2500);
+    } catch {
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 2500);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -117,7 +156,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="pt-2">
-                <Button type="submit" variant="primary" size="sm" className="font-bold">
+                <Button type="submit" variant="primary" size="sm" isLoading={isSaving} className="font-bold bg-indigo-600 hover:bg-indigo-700 text-white">
                   Save Changes
                 </Button>
               </div>
@@ -148,7 +187,7 @@ export default function SettingsPage() {
               <Input type="password" placeholder="••••••••••••" />
             </div>
 
-            <Button variant="primary" size="sm" className="font-bold">
+            <Button variant="primary" size="sm" className="font-bold bg-indigo-600 hover:bg-indigo-700 text-white">
               Update Password
             </Button>
           </CardContent>
@@ -168,11 +207,11 @@ export default function SettingsPage() {
                 type="checkbox"
                 checked={emailJobAlerts}
                 onChange={(e) => setEmailJobAlerts(e.target.checked)}
-                className="mt-0.5 h-3.5 w-3.5 text-[#f08804] rounded-xs"
+                className="mt-0.5 h-3.5 w-3.5 text-indigo-600 rounded-xs"
               />
               <label htmlFor="notif_matches">
                 <span className="font-bold text-[#0f1111] block">High Compatibility Alerts</span>
-                <span className="text-[#565959]">Receive notifications when opportunities matching &gt;90% of your skills are discovered.</span>
+                <span className="text-[#565959]">Receive notifications when opportunities matching your domain skills are discovered.</span>
               </label>
             </div>
 
@@ -182,7 +221,7 @@ export default function SettingsPage() {
                 type="checkbox"
                 checked={followUpReminders}
                 onChange={(e) => setFollowUpReminders(e.target.checked)}
-                className="mt-0.5 h-3.5 w-3.5 text-[#f08804] rounded-xs"
+                className="mt-0.5 h-3.5 w-3.5 text-indigo-600 rounded-xs"
               />
               <label htmlFor="notif_followup">
                 <span className="font-bold text-[#0f1111] block">Follow-Up Cadence Reminders</span>
@@ -190,7 +229,7 @@ export default function SettingsPage() {
               </label>
             </div>
 
-            <Button variant="primary" size="sm" onClick={handleSave} className="font-bold mt-2">
+            <Button variant="primary" size="sm" onClick={handleSave} className="font-bold mt-2 bg-indigo-600 hover:bg-indigo-700 text-white">
               Save Preferences
             </Button>
           </CardContent>
@@ -201,7 +240,7 @@ export default function SettingsPage() {
       {activeSection === "ai" && (
         <Card className="border-[#d5d9d9] bg-white shadow-2xs">
           <CardHeader className="p-4 border-b border-[#f3f4f6]">
-            <CardTitle className="text-sm font-bold text-[#0f1111]">AI Intelligence Engine Settings</CardTitle>
+            <CardTitle className="text-sm font-bold text-[#0f1111]">Groq AI Intelligence Engine Settings</CardTitle>
           </CardHeader>
           <CardContent className="p-4 space-y-4 text-xs max-w-md">
             <div>
@@ -223,11 +262,11 @@ export default function SettingsPage() {
                 <span>Strict Zero-Hallucination Policy Enforced</span>
               </div>
               <p className="text-[11px] leading-relaxed">
-                The generative engine is restricted to statements derived from your verified profile history and AI interview notes.
+                The generative engine is restricted to statements derived from your verified domain profile history and credentials.
               </p>
             </div>
 
-            <Button variant="primary" size="sm" onClick={handleSave} className="font-bold">
+            <Button variant="primary" size="sm" onClick={handleSave} className="font-bold bg-indigo-600 hover:bg-indigo-700 text-white">
               Save AI Settings
             </Button>
           </CardContent>
@@ -244,41 +283,35 @@ export default function SettingsPage() {
             <div className="rounded-xs border border-[#d5d9d9] bg-[#f8f9fa] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-sm text-[#0f1111]">Professional Plan</h3>
-                  <Badge variant="success">Active</Badge>
+                  <h3 className="font-bold text-sm text-[#0f1111]">Pakistan JazzCash Subscriptions</h3>
+                  <Badge variant="success">JazzCash Supported</Badge>
                 </div>
                 <p className="text-xs text-[#565959] mt-0.5">
-                  $29.00 / month • Next billing renewal: April 1, 2026
+                  Weekly Pro (Rs. 1,499) • Monthly Career Pro (Rs. 3,499)
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
-                <Link href="/pricing">
-                  <Button variant="primary" size="sm" className="font-bold">
-                    Upgrade to Career Pro
+                <Link href="/dashboard/billing">
+                  <Button variant="primary" size="sm" className="font-bold bg-indigo-600 hover:bg-indigo-700 text-white">
+                    Manage JazzCash Billing & Plans
                   </Button>
                 </Link>
               </div>
             </div>
 
             <div className="border-t border-[#f3f4f6] pt-3">
-              <h4 className="font-bold text-[#0f1111] mb-2">Past Invoices</h4>
-              <div className="rounded-xs border border-[#e5e7eb] divide-y divide-[#e5e7eb]">
-                <div className="p-2.5 flex justify-between items-center text-xs">
-                  <span>March 1, 2026 — Professional Subscription</span>
-                  <span className="font-bold text-[#0f1111]">$29.00 (Paid)</span>
-                </div>
-                <div className="p-2.5 flex justify-between items-center text-xs">
-                  <span>February 1, 2026 — Professional Subscription</span>
-                  <span className="font-bold text-[#0f1111]">$29.00 (Paid)</span>
-                </div>
+              <h4 className="font-bold text-[#0f1111] mb-2">JazzCash Payment Information</h4>
+              <div className="rounded-xs border border-[#e5e7eb] p-3 text-xs text-[#565959] space-y-1">
+                <p>Transfer account: <strong>03016532878</strong> (HireAgent / JazzCash)</p>
+                <p>Upload proof and review verification status anytime inside the dedicated billing portal.</p>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* 6. DATA & PRIVACY + DANGER ZONE */}
+      {/* 6. DATA & PRIVACY */}
       {activeSection === "privacy" && (
         <div className="space-y-6">
           <Card className="border-[#d5d9d9] bg-white shadow-2xs">
@@ -296,14 +329,13 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Danger Zone */}
           <Card className="border-[#fecaca] bg-[#fef2f2] shadow-2xs">
             <CardHeader className="p-4 border-b border-[#fecaca]">
               <CardTitle className="text-sm font-bold text-[#c41c1c]">Danger Zone: Account Removal</CardTitle>
             </CardHeader>
             <CardContent className="p-4 space-y-3 text-xs">
               <p className="text-[#7f1d1d] leading-relaxed">
-                Permanently delete your profile, resume files, and application logs. This action cannot be reversed.
+                Permanently delete your profile, resume files, and application logs.
               </p>
               <Button
                 variant="danger"

@@ -18,11 +18,12 @@ console.log("==========================================");
 async function runAllTests() {
   // 1. AUTHENTICATION TESTS
   console.log("\n[Group 1: Authentication]");
-  const signUpRes = await AuthService.signUp("test.user@example.com", "SecretPass123!", "Test User");
+  const testEmail = `test.user.${Date.now()}@example.com`;
+  const signUpRes = await AuthService.signUp(testEmail, "SecretPass123!", "Test User");
   assert(signUpRes.user !== null, "Sign up should return user");
-  assert.strictEqual(signUpRes.user?.email, "test.user@example.com", "Email should match");
+  assert.strictEqual(signUpRes.user?.email, testEmail, "Email should match");
 
-  const signInRes = await AuthService.signIn("test.user@example.com", "SecretPass123!");
+  const signInRes = await AuthService.signIn(testEmail, "SecretPass123!");
   assert(signInRes.user !== null, "Sign in should return authenticated user");
   console.log("  ✅ Auth Sign Up & Sign In tests passed!");
 

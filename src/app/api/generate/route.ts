@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { type, jobTitle, company, jobDescription, tone, keyHighlights, recipientName, jobId } = body;
+    const { type, jobTitle, company, jobDescription, tone, keyHighlights, recipientName, jobId, candidateName } = body;
 
     if (!type || !jobTitle || !company) {
       return NextResponse.json(
@@ -64,6 +64,7 @@ export async function POST(request: Request) {
         tone,
         keyHighlights,
         recipientName,
+        candidateName,
       },
       userId
     );

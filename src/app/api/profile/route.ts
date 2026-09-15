@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { profileService } from "@/lib/services/profile-service";
 import { profileSchema } from "@/lib/validations/profile";
+import { AuthService } from "@/lib/services/auth-service";
 
 export async function GET() {
   try {
-    const data = await profileService.getFullProfile();
+    const user = await AuthService.getCurrentUser();
+    const data = await profileService.getFullProfile(user?.id);
     return NextResponse.json({ success: true, data });
   } catch (error) {
     console.error("[API profile GET]:", error);
@@ -17,6 +19,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
+    const user = await AuthService.getCurrentUser();
     const body = await request.json();
     const validated = profileSchema.partial().safeParse(body);
 
@@ -27,7 +30,7 @@ export async function PUT(request: Request) {
       );
     }
 
-    const updated = await profileService.updateProfile(validated.data);
+    const updated = await profileService.updateProfile(validated.data, user?.id);
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {
     console.error("[API profile PUT]:", error);
@@ -40,8 +43,9 @@ export async function PUT(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const user = await AuthService.getCurrentUser();
     const body = await request.json();
-    const updated = await profileService.saveOnboarding(body);
+    const updated = await profileService.saveOnboarding(body, user?.id);
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {
     console.error("[API profile POST]:", error);
@@ -51,4 +55,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

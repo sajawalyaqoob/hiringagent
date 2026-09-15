@@ -16,8 +16,8 @@ const routeTitles: Record<string, { title: string; subtitle: string }> = {
     subtitle: "Your job search progress, active matches, and interview status.",
   },
   "/dashboard/profile": {
-    title: "My Profile",
-    subtitle: "Your skills, work experience, and career goals.",
+    title: "My Career Profile",
+    subtitle: "Your domain skills, work experience, and career goals.",
   },
   "/dashboard/resume": {
     title: "My Resumes",
@@ -36,12 +36,20 @@ const routeTitles: Record<string, { title: string; subtitle: string }> = {
     subtitle: "Keep track of every job you've applied to and next steps.",
   },
   "/dashboard/create": {
-    title: "AI Tailor Studio",
+    title: "AI Studio & Executive CV",
     subtitle: "Generate tailored resumes and cover letters in seconds.",
   },
   "/dashboard/settings": {
     title: "Settings",
     subtitle: "Manage your account, preferences, and notifications.",
+  },
+  "/dashboard/billing": {
+    title: "Subscription & JazzCash Billing",
+    subtitle: "Direct JazzCash account activation for Weekly & Monthly plans.",
+  },
+  "/dashboard/admin": {
+    title: "Admin Command Center",
+    subtitle: "Review JazzCash payment proofs, activate subscriptions, and manage users.",
   },
 };
 
@@ -49,23 +57,48 @@ export function DashboardHeader({ onToggleSidebar }: HeaderProps) {
   const pathname = usePathname();
   const [notificationOpen, setNotificationOpen] = React.useState(false);
   const [profile, setProfile] = React.useState({
-    name: "Alex Morgan",
-    avatarUrl: "/images/default-avatar.jpg",
+    name: "User Candidate",
+    avatarUrl: "",
+    headline: "Professional Candidate",
   });
 
   React.useEffect(() => {
-    fetch("/api/profile")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d?.data?.profile) {
-          setProfile({
-            name: d.data.profile.fullName || "User",
-            avatarUrl: d.data.profile.avatarUrl || "/images/default-avatar.jpg",
-          });
+    async function loadUserData() {
+      try {
+        const [profRes, authRes] = await Promise.all([
+          fetch("/api/profile").then((r) => r.json()).catch(() => null),
+          fetch("/api/auth").then((r) => r.json()).catch(() => null),
+        ]);
+
+        let displayName = "Candidate";
+        let avatarUrl = "";
+        let headline = "Professional Candidate";
+
+        if (authRes?.user?.name) {
+          displayName = authRes.user.name;
         }
-      })
-      .catch(() => null);
-  }, []);
+
+        if (profRes?.success && profRes.data?.profile) {
+          const p = profRes.data.profile;
+          if (p.fullName && p.fullName !== "Candidate") {
+            displayName = p.fullName;
+          }
+          if (p.avatarUrl) avatarUrl = p.avatarUrl;
+          if (p.professionalHeadline) headline = p.professionalHeadline;
+        }
+
+        setProfile({
+          name: displayName,
+          avatarUrl,
+          headline,
+        });
+      } catch (err) {
+        console.warn("Error fetching profile header info:", err);
+      }
+    }
+
+    loadUserData();
+  }, [pathname]);
 
   // Match title
   const currentRoute = Object.keys(routeTitles)
@@ -74,7 +107,7 @@ export function DashboardHeader({ onToggleSidebar }: HeaderProps) {
 
   const meta = currentRoute
     ? routeTitles[currentRoute]
-    : { title: "Dashboard", subtitle: "TalentForge AI Assistant" };
+    : { title: "Dashboard", subtitle: "HireBoost AI Assistant" };
 
   return (
     <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/95 backdrop-blur-md px-4 sm:px-6">
@@ -113,7 +146,7 @@ export function DashboardHeader({ onToggleSidebar }: HeaderProps) {
 
         {/* AI Studio Shortcut */}
         <Link href="/dashboard/create">
-          <Button variant="primary" size="sm" className="hidden sm:inline-flex gap-1.5 font-bold shadow-sm">
+          <Button variant="primary" size="sm" className="hidden sm:inline-flex gap-1.5 font-bold shadow-sm bg-indigo-600 hover:bg-indigo-700 text-white">
             <Sparkles className="h-3.5 w-3.5" />
             <span>AI Studio</span>
           </Button>
@@ -135,38 +168,31 @@ export function DashboardHeader({ onToggleSidebar }: HeaderProps) {
             <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-slate-200 bg-white shadow-xl z-50 text-xs overflow-hidden">
               <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 bg-slate-50/70">
                 <span className="font-bold text-slate-900">Notifications</span>
-                <span className="text-[11px] text-slate-500 font-medium">3 unread</span>
+                <span className="text-[11px] text-slate-500 font-medium">Updated</span>
               </div>
               <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
                 <div className="p-3.5 hover:bg-slate-50 transition-colors">
-                  <p className="font-semibold text-slate-900">Stripe match updated: 94% Match</p>
+                  <p className="font-semibold text-slate-900">Groq AI Profile Analysis Ready</p>
                   <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                    Senior Full-Stack Engineer position closely aligns with your TypeScript & Kafka experience.
+                    Your candidate profile has been evaluated for domain compatibility.
                   </p>
-                  <span className="text-[10px] text-slate-400 mt-1.5 block">2 hours ago</span>
+                  <span className="text-[10px] text-slate-400 mt-1.5 block">Just now</span>
                 </div>
                 <div className="p-3.5 hover:bg-slate-50 transition-colors">
-                  <p className="font-semibold text-slate-900">ATS Resume analysis complete</p>
+                  <p className="font-semibold text-slate-900">Tailored Resume Studio Available</p>
                   <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                    Your primary resume achieved 92/100 ATS compatibility score.
+                    Generate customized resumes tailored specifically for any company and job role.
                   </p>
-                  <span className="text-[10px] text-slate-400 mt-1.5 block">Yesterday</span>
-                </div>
-                <div className="p-3.5 hover:bg-slate-50 transition-colors">
-                  <p className="font-semibold text-slate-900">Follow-up reminder: Vercel</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                    Scheduled follow-up with Marcus Vance is due today.
-                  </p>
-                  <span className="text-[10px] text-slate-400 mt-1.5 block">3 days ago</span>
+                  <span className="text-[10px] text-slate-400 mt-1.5 block">Today</span>
                 </div>
               </div>
               <div className="border-t border-slate-100 p-2.5 text-center bg-slate-50/50">
                 <Link
-                  href="/dashboard/applications"
+                  href="/dashboard/profile"
                   onClick={() => setNotificationOpen(false)}
                   className="text-xs font-bold text-indigo-600 hover:text-indigo-700"
                 >
-                  View All Applications →
+                  View Profile Details →
                 </Link>
               </div>
             </div>
@@ -174,8 +200,8 @@ export function DashboardHeader({ onToggleSidebar }: HeaderProps) {
         </div>
 
         {/* View Profile Shortcut */}
-        <Link href="/dashboard/profile">
-          <div className="flex items-center gap-2 border-l border-slate-200 pl-3 hover:opacity-80 transition-opacity">
+        <Link href="/dashboard/profile" className="flex items-center gap-2 border-l border-slate-200 pl-3 hover:opacity-80 transition-opacity">
+          <div className="flex items-center gap-2">
             <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full ring-1 ring-slate-200 bg-slate-100">
               {profile.avatarUrl ? (
                 <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" />
@@ -185,6 +211,9 @@ export function DashboardHeader({ onToggleSidebar }: HeaderProps) {
                 </div>
               )}
             </div>
+            <span className="hidden md:inline-block text-xs font-bold text-slate-800 max-w-[120px] truncate">
+              {profile.name}
+            </span>
           </div>
         </Link>
       </div>

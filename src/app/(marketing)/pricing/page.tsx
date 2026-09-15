@@ -6,59 +6,58 @@ import { Button } from "@/components/ui/button";
 export default function PricingPage() {
   const tiers = [
     {
-      name: "Starter",
+      name: "Free Preview",
       tier: "free",
-      price: "$0",
-      cadence: "forever free",
+      price: "Rs. 0",
+      cadence: "explore free",
       description: "Ideal for candidates setting up their initial career profile and testing ATS scores.",
       features: [
         "1 Primary Resume & Profile",
-        "1 Basic ATS Resume Scan per month",
+        "1 Basic ATS Resume Scan",
         "5 Job Compatibility Matches",
-        "10 Tracked Pipeline Applications",
-        "Community Support",
+        "Community Career Support",
       ],
-      cta: "Start Free",
+      cta: "Create Free Account",
       href: "/signup",
       popular: false,
     },
     {
-      name: "Professional",
-      tier: "professional",
-      price: "$29",
-      cadence: "billed monthly",
-      description: "For active engineers and candidates actively applying to software and product roles.",
+      name: "Weekly Pro",
+      tier: "weekly",
+      price: "Rs. 1,499",
+      cadence: "7 days access",
+      description: "For active candidates actively interviewing and applying to software and tech roles this week.",
       features: [
         "Unlimited ATS Resume Scans",
         "Unlimited Job Compatibility Matches",
-        "50 AI Tailored Generations / month",
+        "AI Tailored Resumes & Cover Letters",
         "AI Career Interview (Skill Depth Calibration)",
-        "Recruiter Outreach & Cold Email Generator",
+        "Direct JazzCash 03016532878 Activation",
         "Full Kanban Application Pipeline",
         "Follow-up & Interview Preparation Alerts",
       ],
-      cta: "Start 7-Day Free Trial",
-      href: "/signup",
-      popular: true,
+      cta: "Activate via JazzCash",
+      href: "/dashboard/billing",
+      popular: false,
     },
     {
-      name: "Career Pro",
-      tier: "career_pro",
-      price: "$59",
-      cadence: "billed monthly",
-      description: "For senior, staff, and principal engineers seeking top compensation and executive roles.",
+      name: "Monthly Career Pro",
+      tier: "monthly",
+      price: "Rs. 3,499",
+      cadence: "30 days access (Save 42%)",
+      description: "For engineers seeking top market compensation, remote US/EU jobs, and executive tech positions.",
       features: [
-        "Everything in Professional",
-        "Unlimited AI Studio Generations",
-        "Recruiter Discovery & Public Contact Matcher",
+        "Everything in Weekly Pro",
+        "Unlimited AI Studio Generations for 30 Days",
+        "Priority Recruiter Discovery & Contact Matcher",
         "Multiple Tailored Resume Snapshots",
         "Executive Cover Letter Strategy Suite",
-        "Priority ATS Engine Calibration",
-        "Dedicated Engineering Career Support",
+        "Fast-Track Admin Verification Priority",
+        "Dedicated Career Consultation Support",
       ],
-      cta: "Upgrade to Career Pro",
-      href: "/signup",
-      popular: false,
+      cta: "Activate via JazzCash",
+      href: "/dashboard/billing",
+      popular: true,
     },
   ];
 
@@ -156,9 +155,9 @@ export default function PricingPage() {
             </div>
 
             <div className="border border-[#d5d9d9] p-4 rounded-xs bg-[#f8f9fa] space-y-1.5">
-              <h4 className="font-bold text-[#0f1111]">What payment methods are accepted?</h4>
+              <h4 className="font-bold text-[#0f1111]">How do I pay via JazzCash in Pakistan?</h4>
               <p className="text-[#565959] leading-relaxed">
-                We accept all major credit cards (Visa, Mastercard, American Express) via Stripe. Payment keys are configured in Phase 2.
+                Send the plan fee directly to JazzCash mobile number <strong>03016532878</strong> (HireAgent). Once transferred, upload your screenshot in the dashboard billing section, and our admin team will activate your account within 15–30 minutes.
               </p>
             </div>
 

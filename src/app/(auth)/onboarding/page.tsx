@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
-  Code,
   GraduationCap,
   Briefcase,
   FolderGit2,
@@ -16,28 +15,30 @@ import {
   MapPin,
   Phone,
   Mail,
-  GitBranch,
-  Globe,
   Share2,
   Plus,
   Trash2,
   HelpCircle,
-  X,
   ArrowRight,
   Camera,
-  Layers,
   FileText,
-  Clock,
-  ShieldCheck,
   User,
-  ExternalLink,
   Info,
+  Stethoscope,
+  Building,
+  Calculator,
+  Scale,
+  Palette,
+  Megaphone,
+  BookOpen,
+  Wrench,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
+import { CAREER_DOMAINS, getDomainById, type CareerDomain } from "@/lib/config/domains";
 
 interface EducationItem {
   degree: string;
@@ -66,34 +67,11 @@ interface ProjectItem {
   responsibilities: string[];
 }
 
-const CATEGORIZED_SKILL_PRESETS = [
-  {
-    category: "Frontend",
-    skills: ["Next.js", "React", "TypeScript", "Tailwind CSS", "HTML5/CSS3", "JavaScript", "Vue.js", "Redux"],
-  },
-  {
-    category: "Backend",
-    skills: ["Node.js", "Express.js", "REST APIs", "Python", "Nest.js", "GraphQL", "Microservices", "Django"],
-  },
-  {
-    category: "Databases",
-    skills: ["PostgreSQL", "MongoDB", "MySQL", "Redis", "Sequelize ORM", "Prisma", "Supabase"],
-  },
-  {
-    category: "DevOps & Cloud",
-    skills: ["Docker", "Linux Administration", "CI/CD Automation", "AWS", "Nginx", "Git", "Kubernetes", "Vercel"],
-  },
-  {
-    category: "Mobile & Cloud Services",
-    skills: ["React Native", "Flutter", "Expo", "Cloudinary", "Firebase", "Twilio", "SendGrid"],
-  },
-];
-
 const PRESET_AVATARS = [
-  { id: "exec-1", label: "Modern Dev", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces" },
-  { id: "exec-2", label: "Engineer", url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&h=256&fit=crop&crop=faces" },
-  { id: "exec-3", label: "Tech Lead", url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=256&h=256&fit=crop&crop=faces" },
-  { id: "exec-4", label: "Consultant", url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=256&h=256&fit=crop&crop=faces" },
+  { id: "exec-1", label: "Professional 1", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces" },
+  { id: "exec-2", label: "Professional 2", url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&h=256&fit=crop&crop=faces" },
+  { id: "exec-3", label: "Professional 3", url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=256&h=256&fit=crop&crop=faces" },
+  { id: "exec-4", label: "Professional 4", url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=256&h=256&fit=crop&crop=faces" },
 ];
 
 export default function OnboardingPage() {
@@ -105,12 +83,17 @@ export default function OnboardingPage() {
   const [helpModalOpen, setHelpModalOpen] = React.useState<boolean>(false);
   const [isDragging, setIsDragging] = React.useState<boolean>(false);
 
-  // Step 1: Personal & Contact Details (Clean initial state)
+  // Domain Selection
+  const [selectedDomainId, setSelectedDomainId] = React.useState<string>("cs_it");
+  const [customDomainInput, setCustomDomainInput] = React.useState<string>("");
+
+  // Step 1: Personal & Contact Details
   const [fullName, setFullName] = React.useState("");
   const [headline, setHeadline] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState("");
   const [location, setLocation] = React.useState("");
+  const [targetRole, setTargetRole] = React.useState("");
   const [githubUrl, setGithubUrl] = React.useState("");
   const [linkedInUrl, setLinkedInUrl] = React.useState("");
   const [avatarUrl, setAvatarUrl] = React.useState("");
@@ -122,12 +105,78 @@ export default function OnboardingPage() {
   // Step 3: Work Experience with exact Time Periods
   const [experienceList, setExperienceList] = React.useState<ExperienceItem[]>([]);
 
-  // Step 4: Notable Projects with live URLs
+  // Step 4: Notable Projects / Portfolio Items
   const [projectList, setProjectList] = React.useState<ProjectItem[]>([]);
 
-  // Step 5: Core Technical Skills
+  // Step 5: Core Domain & Field Skills
   const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
   const [customSkillInput, setCustomSkillInput] = React.useState("");
+
+  // Current domain object
+  const activeDomain = getDomainById(selectedDomainId);
+
+  // Handle domain change
+  const handleDomainSelect = (domainId: string) => {
+    setSelectedDomainId(domainId);
+    const domain = getDomainById(domainId);
+
+    // Pre-fill smart domain defaults if user hasn't typed custom ones yet
+    if (!headline || CAREER_DOMAINS.some((d) => d.defaultHeadline === headline)) {
+      setHeadline(domain.defaultHeadline);
+    }
+    if (!targetRole || CAREER_DOMAINS.some((d) => d.defaultJobTitle === targetRole)) {
+      setTargetRole(domain.defaultJobTitle);
+    }
+  };
+
+  // Hydrate existing user/profile data if already logged in
+  React.useEffect(() => {
+    async function loadInitialProfile() {
+      try {
+        const [profRes, authRes] = await Promise.all([
+          fetch("/api/profile").then((r) => r.json()).catch(() => null),
+          fetch("/api/auth").then((r) => r.json()).catch(() => null),
+        ]);
+
+        const loggedInUser = authRes?.user;
+        if (loggedInUser) {
+          if (loggedInUser.name) setFullName((prev) => prev || loggedInUser.name);
+          if (loggedInUser.email) setEmail((prev) => prev || loggedInUser.email);
+        }
+
+        if (profRes?.success && profRes.data?.profile) {
+          const p = profRes.data.profile;
+          if (p.fullName && p.fullName !== "Candidate") setFullName(p.fullName);
+          if (p.email) setEmail(p.email);
+          if (p.phone) setPhone(p.phone);
+          if (p.location) setLocation(p.location);
+          if (p.professionalHeadline) setHeadline(p.professionalHeadline);
+          if (p.currentJobTitle) setTargetRole(p.currentJobTitle);
+          if (p.industry) setSelectedDomainId(p.industry);
+          if (p.githubUrl) setGithubUrl(p.githubUrl);
+          if (p.linkedInUrl) setLinkedInUrl(p.linkedInUrl);
+          if (p.avatarUrl) setAvatarUrl(p.avatarUrl);
+          if (p.bio) setBio(p.bio);
+
+          if (Array.isArray(profRes.data.education) && profRes.data.education.length > 0) {
+            setEducationList(profRes.data.education);
+          }
+          if (Array.isArray(profRes.data.experiences) && profRes.data.experiences.length > 0) {
+            setExperienceList(profRes.data.experiences);
+          }
+          if (Array.isArray(profRes.data.projects) && profRes.data.projects.length > 0) {
+            setProjectList(profRes.data.projects);
+          }
+          if (Array.isArray(profRes.data.skills) && profRes.data.skills.length > 0) {
+            setSelectedSkills(profRes.data.skills.map((s: any) => (typeof s === "string" ? s : s.name)));
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to load initial profile data:", err);
+      }
+    }
+    loadInitialProfile();
+  }, []);
 
   // Image Upload Handlers
   const handleImageFile = (file: File) => {
@@ -151,9 +200,7 @@ export default function OnboardingPage() {
 
   const onFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      handleImageFile(file);
-    }
+    if (file) handleImageFile(file);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -170,9 +217,7 @@ export default function OnboardingPage() {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) {
-      handleImageFile(file);
-    }
+    if (file) handleImageFile(file);
   };
 
   const triggerUploadClick = () => {
@@ -182,9 +227,7 @@ export default function OnboardingPage() {
   const removeAvatar = (e: React.MouseEvent) => {
     e.stopPropagation();
     setAvatarUrl("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   // Skill Handlers
@@ -280,11 +323,16 @@ export default function OnboardingPage() {
     setProjectList(projectList.filter((_, i) => i !== idx));
   };
 
-  // Save Everything to backend
+  // Save Everything to Database via API
   const handleSaveAndFinish = async (skip = false) => {
     setSaving(true);
     try {
       if (!skip) {
+        const domainLabel =
+          selectedDomainId === "custom_field" && customDomainInput.trim()
+            ? customDomainInput.trim()
+            : activeDomain.label;
+
         await fetch("/api/profile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -295,8 +343,8 @@ export default function OnboardingPage() {
             location: location.trim(),
             linkedInUrl: linkedInUrl.trim(),
             githubUrl: githubUrl.trim(),
-            careerField: "Software Engineering & Tech",
-            targetRole: headline.split("|")[0]?.trim() || headline.trim() || "Software Engineer",
+            careerField: domainLabel,
+            targetRole: targetRole.trim() || activeDomain.defaultJobTitle,
             avatarUrl,
             bio: bio.trim(),
             education: educationList,
@@ -317,16 +365,16 @@ export default function OnboardingPage() {
 
   // Step metadata
   const stepsConfig = [
-    { id: 1, label: "Identity & Photo", icon: User },
+    { id: 1, label: "Field & Identity", icon: User },
     { id: 2, label: "Education", icon: GraduationCap },
-    { id: 3, label: "Experience & Time", icon: Briefcase },
-    { id: 4, label: "Live Projects", icon: FolderGit2 },
-    { id: 5, label: "Technical Skills", icon: Cpu },
+    { id: 3, label: "Work History", icon: Briefcase },
+    { id: 4, label: "Projects / Portfolio", icon: FolderGit2 },
+    { id: 5, label: "Domain Skills", icon: Cpu },
   ];
 
   return (
     <div className="w-full max-w-4xl mx-auto py-4 px-2 sm:px-4">
-      {/* Hidden File Input for Real Photo Upload */}
+      {/* Hidden File Input for Photo Upload */}
       <input
         type="file"
         ref={fileInputRef}
@@ -343,22 +391,22 @@ export default function OnboardingPage() {
               {step}
             </span>
             <span className="text-xs font-black uppercase tracking-wider text-indigo-600">
-              Step {step} of 5 • InvoZone Professional CV Setup
+              Step {step} of 5 • Personalized Professional Setup
             </span>
           </div>
           <h1 className="mt-1.5 text-xl sm:text-2xl font-black tracking-tight text-slate-900">
-            {step === 1 && "Personal Identity & Contact Bar"}
+            {step === 1 && "Choose Your Professional Field & Personal Details"}
             {step === 2 && "Education & Academic Credentials"}
             {step === 3 && "Work Experience & Time Periods"}
-            {step === 4 && "Notable Projects & Live Deployed URLs"}
-            {step === 5 && "Categorized Technical Stack"}
+            {step === 4 && "Key Projects, Portfolio & Case Studies"}
+            {step === 5 && `Calibrated Skills for ${activeDomain.label}`}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            {step === 1 && "Recruiter-standard contact info, phone, photo, and direct GitHub links."}
-            {step === 2 && "Degrees, universities, graduation timelines, and academic performance."}
+            {step === 1 && "Select your exact domain (CS, Medical/Doctor, Engineering, Accounting, Humanities, Law, Design, etc.)"}
+            {step === 2 && "Formal degrees, universities, and graduation timelines."}
             {step === 3 && "Include exact time periods (e.g. (3 Months) or dates) for recruiter screening."}
-            {step === 4 && "Showcase production systems with live URLs and GitHub repositories."}
-            {step === 5 && "Grouped technical competencies matching agency and enterprise ATS standards."}
+            {step === 4 && "Highlight major initiatives, publications, or live project links."}
+            {step === 5 && "Select or add primary competencies matched to your domain."}
           </p>
         </div>
 
@@ -390,7 +438,6 @@ export default function OnboardingPage() {
       {/* Visual Step Progress Indicator */}
       <div className="mb-8 grid grid-cols-5 gap-2 sm:gap-3">
         {stepsConfig.map((s) => {
-          const Icon = s.icon;
           const isCompleted = s.id < step;
           const isActive = s.id === step;
 
@@ -440,12 +487,63 @@ export default function OnboardingPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* STEP 1: IDENTITY, PHOTO & CONTACT */}
+      {/* STEP 1: DOMAIN SELECTOR & PERSONAL DETAILS */}
       {/* ========================================================================= */}
       {step === 1 && (
         <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Domain Selection Grid */}
+          <div className="rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50/50 via-white to-violet-50/40 p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-indigo-600" />
+              <h3 className="text-sm font-black text-slate-900">
+                Select Your Professional Career Domain / Field <span className="text-rose-500">*</span>
+              </h3>
+            </div>
+            <p className="text-xs text-slate-500">
+              Personalizes your entire platform experience, AI resume generation, and profile evaluation.
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 pt-1">
+              {CAREER_DOMAINS.map((domain) => {
+                const isSelected = selectedDomainId === domain.id;
+                return (
+                  <button
+                    key={domain.id}
+                    type="button"
+                    onClick={() => handleDomainSelect(domain.id)}
+                    className={`rounded-xl p-3 text-left transition-all border cursor-pointer flex flex-col justify-between ${
+                      isSelected
+                        ? "border-indigo-600 bg-white shadow-xs ring-2 ring-indigo-500/20"
+                        : "border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50/50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xl">{domain.icon}</span>
+                      {isSelected && <Check className="h-4 w-4 text-indigo-600 font-bold" />}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-900 leading-tight">{domain.label}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedDomainId === "custom_field" && (
+              <div className="pt-2">
+                <label className="text-xs font-bold text-slate-800 block mb-1">Specify Custom Field</label>
+                <Input
+                  value={customDomainInput}
+                  onChange={(e) => setCustomDomainInput(e.target.value)}
+                  placeholder="e.g. Aviation, Molecular Biology, Environmental Policy"
+                  className="rounded-xl h-10 text-xs"
+                />
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-            {/* Left: Interactive Real Photo Upload Card */}
+            {/* Photo Upload Card */}
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -457,37 +555,25 @@ export default function OnboardingPage() {
                   : "border-slate-200 hover:border-indigo-400 hover:bg-slate-50/50"
               }`}
             >
-              {/* Avatar Preview or Empty Silhouette */}
               <div className="relative mb-3.5 h-28 w-28 overflow-hidden rounded-full ring-4 ring-indigo-500/20 shadow-md group-hover:ring-indigo-500/40 transition-all bg-slate-100 flex items-center justify-center">
                 {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt="Uploaded Avatar"
-                    className="h-full w-full object-cover"
-                  />
+                  <img src={avatarUrl} alt="Uploaded Avatar" className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex flex-col items-center justify-center text-slate-400">
-                    <User className="h-12 w-12 stroke-[1.5]" />
-                  </div>
+                  <User className="h-12 w-12 text-slate-400 stroke-[1.5]" />
                 )}
-
-                {/* Hover overlay */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
                   <Camera className="h-6 w-6 mb-1" />
-                  <span className="text-[10px] font-bold">
-                    {avatarUrl ? "Change" : "Upload"}
-                  </span>
+                  <span className="text-[10px] font-bold">{avatarUrl ? "Change" : "Upload"}</span>
                 </div>
               </div>
 
               <span className="text-xs font-bold text-slate-900">
-                {avatarUrl ? "Photo Uploaded" : "Upload Candidate Photo"}
+                {avatarUrl ? "Photo Uploaded" : "Upload Profile Photo"}
               </span>
               <p className="text-[11px] text-slate-500 mt-1 max-w-[200px] leading-relaxed">
                 Click or drag & drop. High-res JPG, PNG, or WebP up to 5MB.
               </p>
 
-              {/* Action Buttons */}
               <div className="mt-3 flex items-center gap-2">
                 <Button
                   type="button"
@@ -502,50 +588,26 @@ export default function OnboardingPage() {
                   <Upload className="h-3.5 w-3.5 mr-1.5 text-indigo-600" />
                   {avatarUrl ? "Replace Photo" : "Browse File"}
                 </Button>
-
                 {avatarUrl && (
                   <Button
                     type="button"
                     size="sm"
                     variant="ghost"
                     onClick={removeAvatar}
-                    className="rounded-xl text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                    className="rounded-xl text-xs text-rose-600 hover:bg-rose-50"
                   >
                     <Trash2 className="h-3.5 w-3.5 mr-1" />
                     Remove
                   </Button>
                 )}
               </div>
-
-              {/* Optional Preset Avatars */}
-              <div className="mt-4 pt-3 border-t border-slate-100 w-full" onClick={(e) => e.stopPropagation()}>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2">
-                  Or pick a professional style:
-                </span>
-                <div className="flex items-center justify-center gap-2">
-                  {PRESET_AVATARS.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setAvatarUrl(p.url)}
-                      title={p.label}
-                      className={`h-8 w-8 rounded-full overflow-hidden border-2 transition-all hover:scale-110 ${
-                        avatarUrl === p.url ? "border-indigo-600 ring-2 ring-indigo-300" : "border-slate-200"
-                      }`}
-                    >
-                      <img src={p.url} alt={p.label} className="h-full w-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
 
-            {/* Right: Personal & Contact Information */}
+            {/* Personal Info Form */}
             <div className="md:col-span-2 space-y-4 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-bold text-slate-800 text-xs block mb-1.5 flex items-center gap-1.5">
-                    <User className="h-3.5 w-3.5 text-indigo-600" />
+                  <label className="font-bold text-slate-800 text-xs block mb-1.5">
                     Full Name <span className="text-rose-500">*</span>
                   </label>
                   <Input
@@ -557,39 +619,47 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-800 text-xs block mb-1.5 flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5 text-indigo-600" />
+                  <label className="font-bold text-slate-800 text-xs block mb-1.5">
                     Location / City <span className="text-rose-500">*</span>
                   </label>
                   <Input
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    placeholder="e.g. San Francisco, CA or Remote"
+                    placeholder="e.g. New York, NY or Remote"
                     className="rounded-xl h-10"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="font-bold text-slate-800 text-xs block mb-1.5 flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
-                  Professional Headline / Title <span className="text-rose-500">*</span>
-                </label>
-                <Input
-                  value={headline}
-                  onChange={(e) => setHeadline(e.target.value)}
-                  placeholder="e.g. Senior Full-Stack Engineer | React, Node.js & Cloud Architect"
-                  className="rounded-xl h-10"
-                />
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Appears at the very top of your InvoZone-standard CV right beneath your name.
-                </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="font-bold text-slate-800 text-xs block mb-1.5">
+                    Target Role / Job Title <span className="text-rose-500">*</span>
+                  </label>
+                  <Input
+                    value={targetRole}
+                    onChange={(e) => setTargetRole(e.target.value)}
+                    placeholder={`e.g. ${activeDomain.defaultJobTitle}`}
+                    className="rounded-xl h-10"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-800 text-xs block mb-1.5">
+                    Professional Headline <span className="text-rose-500">*</span>
+                  </label>
+                  <Input
+                    value={headline}
+                    onChange={(e) => setHeadline(e.target.value)}
+                    placeholder={`e.g. ${activeDomain.defaultHeadline}`}
+                    className="rounded-xl h-10"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-bold text-slate-800 text-xs block mb-1.5 flex items-center gap-1.5">
-                    <Mail className="h-3.5 w-3.5 text-indigo-600" />
+                  <label className="font-bold text-slate-800 text-xs block mb-1.5">
                     Email Address <span className="text-rose-500">*</span>
                   </label>
                   <Input
@@ -602,37 +672,22 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-800 text-xs block mb-1.5 flex items-center gap-1.5">
-                    <Phone className="h-3.5 w-3.5 text-indigo-600" />
-                    Phone / WhatsApp <span className="text-rose-500">*</span>
+                  <label className="font-bold text-slate-800 text-xs block mb-1.5">
+                    Phone / Contact Number <span className="text-rose-500">*</span>
                   </label>
                   <Input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="e.g. +1 (555) 234-5678 or 0300-1234567"
-                    className="rounded-xl h-10 font-mono"
+                    placeholder="e.g. +1 (555) 234-5678"
+                    className="rounded-xl h-10"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-bold text-slate-800 text-xs block mb-1.5 flex items-center gap-1.5">
-                    <GitBranch className="h-3.5 w-3.5 text-indigo-600" />
-                    GitHub Profile / URL
-                  </label>
-                  <Input
-                    value={githubUrl}
-                    onChange={(e) => setGithubUrl(e.target.value)}
-                    placeholder="github.com/username"
-                    className="rounded-xl h-10"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-800 text-xs block mb-1.5 flex items-center gap-1.5">
-                    <Share2 className="h-3.5 w-3.5 text-indigo-600" />
-                    LinkedIn Profile / URL
+                  <label className="font-bold text-slate-800 text-xs block mb-1.5">
+                    LinkedIn Profile URL
                   </label>
                   <Input
                     value={linkedInUrl}
@@ -641,36 +696,56 @@ export default function OnboardingPage() {
                     className="rounded-xl h-10"
                   />
                 </div>
+
+                <div>
+                  <label className="font-bold text-slate-800 text-xs block mb-1.5">
+                    GitHub / Portfolio / Website URL
+                  </label>
+                  <Input
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    placeholder="github.com/username or portfolio.com"
+                    className="rounded-xl h-10"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="font-bold text-slate-800 text-xs block mb-1.5 flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5 text-indigo-600" />
+                <label className="font-bold text-slate-800 text-xs block mb-1.5">
                   Executive Profile Summary
                 </label>
                 <textarea
                   rows={3}
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="Describe your background, core technical capabilities, and what engineering value you deliver..."
+                  placeholder={`Describe your background, core capabilities in ${activeDomain.label}, and what value you bring...`}
                   className="w-full rounded-xl border border-slate-200 p-3 text-xs leading-relaxed focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                 />
               </div>
             </div>
           </div>
+
+          <div className="flex justify-end pt-2">
+            <Button
+              type="button"
+              onClick={() => setStep(2)}
+              className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5"
+            >
+              <span>Next: Add Education</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* STEP 2: FORMAL EDUCATION HISTORY */}
-      {/* ========================================================================= */}
+      {/* STEP 2: EDUCATION */}
       {step === 2 && (
         <div className="space-y-4 animate-in fade-in duration-200">
           <div className="flex items-center justify-between rounded-xl bg-indigo-50/60 p-3.5 border border-indigo-100 text-xs text-indigo-900">
             <div className="flex items-center gap-2">
               <Info className="h-4 w-4 text-indigo-600 shrink-0" />
               <span>
-                <strong>InvoZone Standard Tip:</strong> List your formal degrees, universities, and graduation years. Multiple degrees (e.g. BS + MS) are supported.
+                List your formal degrees, professional diplomas, or academic certifications.
               </span>
             </div>
             <Button
@@ -680,7 +755,7 @@ export default function OnboardingPage() {
               className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white shrink-0 ml-3"
             >
               <Plus className="h-3.5 w-3.5 mr-1" />
-              Add Degree
+              Add Qualification
             </Button>
           </div>
 
@@ -699,26 +774,22 @@ export default function OnboardingPage() {
                 className="mt-4 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white"
               >
                 <Plus className="h-3.5 w-3.5 mr-1.5" />
-                Add Your First Degree
+                Add Your Qualification
               </Button>
             </div>
           ) : (
             <div className="space-y-4">
               {educationList.map((edu, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3 relative group"
-                >
+                <div key={idx} className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                     <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                       <GraduationCap className="h-4 w-4 text-indigo-600" />
-                      Degree Entry #{idx + 1}
+                      Degree / Qualification #{idx + 1}
                     </span>
                     <button
                       type="button"
                       onClick={() => removeEducation(idx)}
-                      className="text-slate-400 hover:text-rose-600 p-1 transition-colors"
-                      title="Remove Degree"
+                      className="text-slate-400 hover:text-rose-600 p-1"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -727,12 +798,12 @@ export default function OnboardingPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                        Degree Program
+                        Degree / Qualification Title
                       </label>
                       <Input
                         value={edu.degree}
                         onChange={(e) => updateEducation(idx, "degree", e.target.value)}
-                        placeholder="e.g. BS Computer Science (BSCS)"
+                        placeholder="e.g. Bachelor of Science / MBBS / CPA / MBA"
                         className="rounded-xl h-9 text-xs"
                       />
                     </div>
@@ -744,7 +815,7 @@ export default function OnboardingPage() {
                       <Input
                         value={edu.institution}
                         onChange={(e) => updateEducation(idx, "institution", e.target.value)}
-                        placeholder="e.g. Stanford University or NCBA&E"
+                        placeholder="e.g. Stanford University or Medical College"
                         className="rounded-xl h-9 text-xs"
                       />
                     </div>
@@ -752,71 +823,67 @@ export default function OnboardingPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                        Start Year
-                      </label>
+                      <label className="text-[11px] font-bold text-slate-700 block mb-1">Start Year</label>
                       <Input
                         value={edu.startDate}
                         onChange={(e) => updateEducation(idx, "startDate", e.target.value)}
-                        placeholder="e.g. 2021"
+                        placeholder="e.g. 2020"
                         className="rounded-xl h-9 text-xs"
                       />
                     </div>
-
                     <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                        Graduation Year
-                      </label>
+                      <label className="text-[11px] font-bold text-slate-700 block mb-1">Graduation Year</label>
                       <Input
                         value={edu.endDate}
                         onChange={(e) => updateEducation(idx, "endDate", e.target.value)}
-                        placeholder="e.g. 2025"
+                        placeholder="e.g. 2024"
                         className="rounded-xl h-9 text-xs"
                       />
                     </div>
-
                     <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                        GPA / Honors (Optional)
-                      </label>
+                      <label className="text-[11px] font-bold text-slate-700 block mb-1">GPA / Honors</label>
                       <Input
                         value={edu.gpa || ""}
                         onChange={(e) => updateEducation(idx, "gpa", e.target.value)}
-                        placeholder="e.g. 3.8 / 4.0"
+                        placeholder="e.g. 3.8 / 4.0 or Distinction"
                         className="rounded-xl h-9 text-xs"
                       />
                     </div>
                   </div>
                 </div>
               ))}
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addEducationRow}
-                className="w-full rounded-xl border-dashed border-slate-300 py-3 text-xs font-bold text-slate-700 hover:border-indigo-400 hover:text-indigo-600"
-              >
-                <Plus className="h-3.5 w-3.5 mr-1" />
-                Add Another Degree
-              </Button>
             </div>
           )}
+
+          <div className="flex items-center justify-between pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStep(1)}
+              className="rounded-xl font-bold text-xs"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setStep(3)}
+              className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5"
+            >
+              <span>Next: Work History</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* STEP 3: WORK EXPERIENCE & INTERNSHIPS WITH TIME PERIODS */}
-      {/* ========================================================================= */}
+      {/* STEP 3: WORK HISTORY */}
       {step === 3 && (
         <div className="space-y-4 animate-in fade-in duration-200">
-          <div className="flex items-center justify-between rounded-xl bg-amber-50/70 p-3.5 border border-amber-200/80 text-xs text-amber-950">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-amber-700 shrink-0" />
-              <span>
-                <strong>Crucial InvoZone Rule:</strong> Always specify the exact <strong>Duration / Time Period</strong> (e.g. <em>&quot;(3 Months)&quot;</em> or <em>&quot;Jan 2024 – Apr 2024&quot;</em>). Recruiters look for continuous timelines.
-              </span>
-            </div>
+          <div className="flex items-center justify-between rounded-xl bg-indigo-50/60 p-3.5 border border-indigo-100 text-xs text-indigo-900">
+            <span>
+              Include exact time periods (e.g. <em>&quot;(3 Months)&quot;</em> or start/end dates) to optimize recruiter screening.
+            </span>
             <Button
               type="button"
               size="sm"
@@ -824,7 +891,7 @@ export default function OnboardingPage() {
               className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white shrink-0 ml-3"
             >
               <Plus className="h-3.5 w-3.5 mr-1" />
-              Add Experience
+              Add Work History
             </Button>
           </div>
 
@@ -833,9 +900,9 @@ export default function OnboardingPage() {
               <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 mb-3">
                 <Briefcase className="h-6 w-6" />
               </div>
-              <h3 className="text-sm font-bold text-slate-800">No Work Experience Added Yet</h3>
+              <h3 className="text-sm font-bold text-slate-800">No Experience Added Yet</h3>
               <p className="text-xs text-slate-500 mt-1 max-w-sm">
-                Add internships, contract roles, or full-time experience. Exact time periods are highlighted directly on your InvoZone CV.
+                Add your employment history, clinical residency, or project roles.
               </p>
               <Button
                 type="button"
@@ -843,32 +910,39 @@ export default function OnboardingPage() {
                 className="mt-4 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white"
               >
                 <Plus className="h-3.5 w-3.5 mr-1.5" />
-                Add Your First Experience
+                Add Position
               </Button>
             </div>
           ) : (
             <div className="space-y-4">
               {experienceList.map((exp, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3 relative group"
-                >
+                <div key={idx} className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                     <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                       <Briefcase className="h-4 w-4 text-emerald-600" />
-                      Role #{idx + 1}
+                      Experience Entry #{idx + 1}
                     </span>
                     <button
                       type="button"
                       onClick={() => removeExperience(idx)}
-                      className="text-slate-400 hover:text-rose-600 p-1 transition-colors"
-                      title="Remove Role"
+                      className="text-slate-400 hover:text-rose-600 p-1"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                        Company / Organization / Hospital
+                      </label>
+                      <Input
+                        value={exp.company}
+                        onChange={(e) => updateExperience(idx, "company", e.target.value)}
+                        placeholder="e.g. Apex Health / Vanguard Corp"
+                        className="rounded-xl h-9 text-xs"
+                      />
+                    </div>
                     <div>
                       <label className="text-[11px] font-bold text-slate-700 block mb-1">
                         Job Title / Position
@@ -876,88 +950,81 @@ export default function OnboardingPage() {
                       <Input
                         value={exp.jobTitle}
                         onChange={(e) => updateExperience(idx, "jobTitle", e.target.value)}
-                        placeholder="e.g. MERN Stack Developer Intern"
-                        className="rounded-xl h-9 text-xs font-medium"
+                        placeholder={`e.g. ${activeDomain.defaultJobTitle}`}
+                        className="rounded-xl h-9 text-xs"
                       />
                     </div>
+                  </div>
 
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                        Company / Organization
-                      </label>
-                      <Input
-                        value={exp.company}
-                        onChange={(e) => updateExperience(idx, "company", e.target.value)}
-                        placeholder="e.g. InvoZone or Tech Sole Inc."
-                        className="rounded-xl h-9 text-xs font-medium"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-bold text-indigo-700 block mb-1 flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
                         Duration / Time Period
                       </label>
                       <Input
                         value={exp.duration}
                         onChange={(e) => updateExperience(idx, "duration", e.target.value)}
-                        placeholder="e.g. (3 Months) or Jan 2024 – Apr 2024"
-                        className="rounded-xl h-9 text-xs font-bold text-indigo-900 border-indigo-300 bg-indigo-50/30"
+                        placeholder="e.g. (3 Months) or Jan 2023 - Present"
+                        className="rounded-xl h-9 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-700 block mb-1">Location</label>
+                      <Input
+                        value={exp.location}
+                        onChange={(e) => updateExperience(idx, "location", e.target.value)}
+                        placeholder="e.g. New York, NY (Remote)"
+                        className="rounded-xl h-9 text-xs"
                       />
                     </div>
                   </div>
 
                   <div>
                     <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                      Key Responsibilities & Deliverables
+                      Responsibilities & Key Deliverables
                     </label>
                     <textarea
-                      rows={2}
-                      value={exp.responsibilities.join("\n")}
-                      onChange={(e) =>
-                        updateExperience(
-                          idx,
-                          "responsibilities",
-                          e.target.value.split("\n").filter((l) => l.trim().length > 0)
-                        )
-                      }
-                      placeholder="• Built production-grade web applications with Next.js and Node.js&#10;• Engineered REST APIs and configured Nginx deployment on VPS"
-                      className="w-full rounded-xl border border-slate-200 p-2.5 text-xs leading-relaxed focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                      rows={3}
+                      value={Array.isArray(exp.responsibilities) ? exp.responsibilities.join("\n") : exp.responsibilities}
+                      onChange={(e) => updateExperience(idx, "responsibilities", e.target.value.split("\n"))}
+                      placeholder="Bullet points describing your duties, accomplishments, and metrics..."
+                      className="w-full rounded-xl border border-slate-200 p-2.5 text-xs leading-relaxed"
                     />
-                    <p className="text-[10px] text-slate-400 mt-0.5">
-                      Separate each bullet point on a new line.
-                    </p>
                   </div>
                 </div>
               ))}
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addExperienceRow}
-                className="w-full rounded-xl border-dashed border-slate-300 py-3 text-xs font-bold text-slate-700 hover:border-indigo-400 hover:text-indigo-600"
-              >
-                <Plus className="h-3.5 w-3.5 mr-1" />
-                Add Another Role / Internship
-              </Button>
             </div>
           )}
+
+          <div className="flex items-center justify-between pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStep(2)}
+              className="rounded-xl font-bold text-xs"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setStep(4)}
+              className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5"
+            >
+              <span>Next: Projects & Portfolio</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* STEP 4: NOTABLE PROJECTS WITH LIVE URLS */}
-      {/* ========================================================================= */}
+      {/* STEP 4: PROJECTS / PORTFOLIO */}
       {step === 4 && (
         <div className="space-y-4 animate-in fade-in duration-200">
-          <div className="flex items-center justify-between rounded-xl bg-blue-50/70 p-3.5 border border-blue-200/80 text-xs text-blue-950">
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-blue-600 shrink-0" />
-              <span>
-                <strong>Recruiter Standard:</strong> Live deployed URLs (e.g. <em>https://myproject.com</em>) give you a 3x higher callback rate than code-only repos.
-              </span>
-            </div>
+          <div className="flex items-center justify-between rounded-xl bg-indigo-50/60 p-3.5 border border-indigo-100 text-xs text-indigo-900">
+            <span>
+              Add key projects, publications, clinical research, or portfolio links matching {activeDomain.label}.
+            </span>
             <Button
               type="button"
               size="sm"
@@ -971,12 +1038,12 @@ export default function OnboardingPage() {
 
           {projectList.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white p-12 text-center">
-              <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mb-3">
+              <div className="h-12 w-12 rounded-full bg-violet-50 flex items-center justify-center text-violet-600 mb-3">
                 <FolderGit2 className="h-6 w-6" />
               </div>
               <h3 className="text-sm font-bold text-slate-800">No Projects Added Yet</h3>
               <p className="text-xs text-slate-500 mt-1 max-w-sm">
-                Add your deployed web apps, open-source repos, or client systems. Clickable links will be embedded directly in your InvoZone CV.
+                Optional: Add key highlighted projects or case studies to strengthen your profile score.
               </p>
               <Button
                 type="button"
@@ -989,21 +1056,17 @@ export default function OnboardingPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {projectList.map((prj, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3 relative group"
-                >
+              {projectList.map((proj, idx) => (
+                <div key={idx} className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                     <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <FolderGit2 className="h-4 w-4 text-blue-600" />
-                      Project #{idx + 1}
+                      <FolderGit2 className="h-4 w-4 text-violet-600" />
+                      Project Entry #{idx + 1}
                     </span>
                     <button
                       type="button"
                       onClick={() => removeProject(idx)}
-                      className="text-slate-400 hover:text-rose-600 p-1 transition-colors"
-                      title="Remove Project"
+                      className="text-slate-400 hover:text-rose-600 p-1"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -1015,49 +1078,20 @@ export default function OnboardingPage() {
                         Project Name
                       </label>
                       <Input
-                        value={prj.name}
+                        value={proj.name}
                         onChange={(e) => updateProject(idx, "name", e.target.value)}
-                        placeholder="e.g. Cloud Deals Marketplace Platform"
-                        className="rounded-xl h-9 text-xs font-bold"
+                        placeholder="e.g. Clinical Telehealth App / Financial Audit Initiative"
+                        className="rounded-xl h-9 text-xs"
                       />
                     </div>
-
                     <div>
                       <label className="text-[11px] font-bold text-slate-700 block mb-1">
                         Your Role
                       </label>
                       <Input
-                        value={prj.role}
+                        value={proj.role}
                         onChange={(e) => updateProject(idx, "role", e.target.value)}
-                        placeholder="e.g. Full Stack Developer & DevOps Lead"
-                        className="rounded-xl h-9 text-xs"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[11px] font-bold text-blue-700 block mb-1 flex items-center gap-1">
-                        <ExternalLink className="h-3 w-3" />
-                        Live Deployed URL (Clickable on CV)
-                      </label>
-                      <Input
-                        value={prj.projectUrl}
-                        onChange={(e) => updateProject(idx, "projectUrl", e.target.value)}
-                        placeholder="https://myproject.com or https://234deals.com"
-                        className="rounded-xl h-9 text-xs border-blue-200 bg-blue-50/20"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1 flex items-center gap-1">
-                        <GitBranch className="h-3 w-3 text-slate-400" />
-                        GitHub Repository URL
-                      </label>
-                      <Input
-                        value={prj.githubUrl}
-                        onChange={(e) => updateProject(idx, "githubUrl", e.target.value)}
-                        placeholder="https://github.com/username/project"
+                        placeholder="e.g. Lead Author / Auditor / Lead Architect"
                         className="rounded-xl h-9 text-xs"
                       />
                     </div>
@@ -1065,211 +1099,157 @@ export default function OnboardingPage() {
 
                   <div>
                     <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                      Key Highlights & Architecture
+                      Project or Case Study URL
+                    </label>
+                    <Input
+                      value={proj.projectUrl}
+                      onChange={(e) => updateProject(idx, "projectUrl", e.target.value)}
+                      placeholder="https://example.com/project"
+                      className="rounded-xl h-9 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                      Key Highlights & Impact
                     </label>
                     <textarea
                       rows={2}
-                      value={prj.responsibilities.join("\n")}
-                      onChange={(e) =>
-                        updateProject(
-                          idx,
-                          "responsibilities",
-                          e.target.value.split("\n").filter((l) => l.trim().length > 0)
-                        )
-                      }
-                      placeholder="• Engineered end-to-end architecture with Next.js, Node.js, and PostgreSQL&#10;• Implemented automated CI/CD and deployment on VPS container infrastructure"
-                      className="w-full rounded-xl border border-slate-200 p-2.5 text-xs leading-relaxed focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                      value={Array.isArray(proj.responsibilities) ? proj.responsibilities.join("\n") : proj.responsibilities}
+                      onChange={(e) => updateProject(idx, "responsibilities", e.target.value.split("\n"))}
+                      placeholder="Bullet points summarizing technical details or outcome..."
+                      className="w-full rounded-xl border border-slate-200 p-2 text-xs"
                     />
                   </div>
                 </div>
               ))}
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addProjectRow}
-                className="w-full rounded-xl border-dashed border-slate-300 py-3 text-xs font-bold text-slate-700 hover:border-indigo-400 hover:text-indigo-600"
-              >
-                <Plus className="h-3.5 w-3.5 mr-1" />
-                Add Another Project
-              </Button>
             </div>
           )}
+
+          <div className="flex items-center justify-between pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStep(3)}
+              className="rounded-xl font-bold text-xs"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setStep(5)}
+              className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5"
+            >
+              <span>Next: Domain Skills</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* STEP 5: CATEGORIZED TECHNICAL SKILLS */}
-      {/* ========================================================================= */}
+      {/* STEP 5: DOMAIN SKILLS */}
       {step === 5 && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="rounded-xl bg-slate-50 p-4 border border-slate-200 text-xs text-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <span className="font-bold text-slate-900 block">
-                Selected Skills ({selectedSkills.length})
-              </span>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                InvoZone CV layout categorizes these automatically into Frontend, Backend, Databases, and DevOps.
-              </p>
+          <div className="rounded-2xl border border-indigo-100 bg-white p-5 space-y-4 shadow-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Select Competencies for {activeDomain.label}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Click skills to toggle them into your profile.
+                </p>
+              </div>
+              <Badge variant="success" className="font-bold">
+                {selectedSkills.length} Selected
+              </Badge>
             </div>
 
-            {/* Custom skill adder */}
-            <form onSubmit={handleAddCustomSkill} className="flex gap-2 shrink-0">
+            {/* Presets by Category */}
+            <div className="space-y-4">
+              {activeDomain.presetSkills.map((cat, cIdx) => (
+                <div key={cIdx} className="space-y-2">
+                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+                    {cat.category}
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {cat.skills.map((skill) => {
+                      const isSelected = selectedSkills.includes(skill);
+                      return (
+                        <button
+                          key={skill}
+                          type="button"
+                          onClick={() => toggleSkill(skill)}
+                          className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                            isSelected
+                              ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                              : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                          }`}
+                        >
+                          {isSelected && <Check className="h-3.5 w-3.5" />}
+                          <span>{skill}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Custom Skill Input */}
+            <form onSubmit={handleAddCustomSkill} className="pt-3 border-t border-slate-100 flex gap-2">
               <Input
                 value={customSkillInput}
                 onChange={(e) => setCustomSkillInput(e.target.value)}
-                placeholder="+ Add custom skill"
-                className="rounded-xl h-8 text-xs w-44"
+                placeholder="Add any custom skill, tool, or certification..."
+                className="rounded-xl h-10 text-xs flex-1"
               />
-              <Button type="submit" size="sm" className="rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white h-8">
-                Add
+              <Button type="submit" variant="outline" className="rounded-xl font-bold text-xs h-10 shrink-0">
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                Add Skill
               </Button>
             </form>
           </div>
 
-          {/* Categorized presets */}
-          <div className="space-y-4">
-            {CATEGORIZED_SKILL_PRESETS.map((cat) => (
-              <div key={cat.category} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
-                <div className="mb-2.5 flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-700">
-                    {cat.category}
-                  </span>
-                  <span className="text-[10px] font-semibold text-slate-400">
-                    {cat.skills.filter((s) => selectedSkills.includes(s)).length} of {cat.skills.length} selected
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {cat.skills.map((skill) => {
-                    const isSelected = selectedSkills.includes(skill);
-                    return (
-                      <button
-                        key={skill}
-                        type="button"
-                        onClick={() => toggleSkill(skill)}
-                        className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
-                          isSelected
-                            ? "bg-indigo-600 text-white shadow-xs scale-[1.02]"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        }`}
-                      >
-                        {isSelected ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3 opacity-50" />}
-                        {skill}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+          <div className="flex items-center justify-between pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStep(4)}
+              className="rounded-xl font-bold text-xs"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back
+            </Button>
+            <Button
+              type="button"
+              onClick={() => handleSaveAndFinish(false)}
+              isLoading={saving}
+              className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 shadow-md px-6 h-10"
+            >
+              <Check className="h-4 w-4" />
+              <span>Complete Setup & Save to Database</span>
+            </Button>
           </div>
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* BOTTOM NAVIGATION CONTROLS */}
-      {/* ========================================================================= */}
-      <div className="mt-8 pt-4 border-t border-slate-200/80 flex items-center justify-between">
-        <div>
-          {step > 1 ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setStep(step - 1)}
-              className="rounded-xl font-bold text-xs border-slate-300"
-            >
-              <ChevronLeft className="mr-1 h-3.5 w-3.5" />
-              Back
-            </Button>
-          ) : (
-            <span className="text-xs text-slate-400 font-medium">Step 1 of 5</span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          {step < 5 ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setStep(step + 1)}
-                className="text-xs font-medium text-slate-500 hover:text-slate-800"
-              >
-                Skip this step
-              </button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => setStep(step + 1)}
-                className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm px-4 h-9"
-              >
-                Continue
-                <ChevronRight className="ml-1 h-3.5 w-3.5" />
-              </Button>
-            </>
-          ) : (
-            <Button
-              type="button"
-              size="sm"
-              disabled={saving}
-              onClick={() => handleSaveAndFinish(false)}
-              className="rounded-xl font-bold text-xs bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-md shadow-indigo-500/25 px-5 h-9"
-            >
-              {saving ? "Generating Profile..." : "Complete & Generate InvoZone CV ✨"}
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* RECRUITER & ATS GUIDANCE POPUP MODAL */}
-      {/* ========================================================================= */}
+      {/* Help Modal */}
       <Modal
         isOpen={helpModalOpen}
         onClose={() => setHelpModalOpen(false)}
-        title="💡 InvoZone Professional CV Guidance"
-        description="Benchmark criteria extracted from authentic InvoZone executive resumes:"
+        title="💡 Professional Setup Tips"
+        description="Follow these guidelines to optimize your profile for ATS scanners and recruiter screening:"
       >
-        <div className="space-y-3.5 text-xs text-slate-700 leading-relaxed">
-          <div className="rounded-xl bg-indigo-50/70 p-3.5 border border-indigo-100">
-            <h4 className="font-bold text-indigo-950 flex items-center gap-1.5">
-              <Clock className="h-4 w-4 text-indigo-600" />
-              1. Time Periods Are Mandatory
-            </h4>
-            <p className="mt-1 text-indigo-900 text-[11px]">
-              Top agencies and ATS systems filter candidates by duration. Always include explicit terms like <strong>&quot;(3 Months)&quot;</strong> or <strong>&quot;Jan 2024 – Apr 2024&quot;</strong>.
-            </p>
-          </div>
-
-          <div className="rounded-xl bg-blue-50/70 p-3.5 border border-blue-100">
-            <h4 className="font-bold text-blue-950 flex items-center gap-1.5">
-              <Globe className="h-4 w-4 text-blue-600" />
-              2. Live URLs Prove Real Engineering Capability
-            </h4>
-            <p className="mt-1 text-blue-900 text-[11px]">
-              A clickable live deployment URL (e.g. <em>https://234deals.com</em>) immediately establishes trust and sets you apart from generic bootcamp candidates.
-            </p>
-          </div>
-
-          <div className="rounded-xl bg-emerald-50/70 p-3.5 border border-emerald-100">
-            <h4 className="font-bold text-emerald-950 flex items-center gap-1.5">
-              <Cpu className="h-4 w-4 text-emerald-600" />
-              3. Categorized Skills Taxonomy
-            </h4>
-            <p className="mt-1 text-emerald-900 text-[11px]">
-              Never list 40 skills in one giant paragraph. Recruiters scan by <strong>Frontend</strong>, <strong>Backend</strong>, <strong>Databases</strong>, and <strong>DevOps & Cloud</strong>.
-            </p>
-          </div>
-
-          <div className="rounded-xl bg-purple-50/70 p-3.5 border border-purple-100">
-            <h4 className="font-bold text-purple-950 flex items-center gap-1.5">
-              <Phone className="h-4 w-4 text-purple-600" />
-              4. Immediate Contact Directness
-            </h4>
-            <p className="mt-1 text-purple-900 text-[11px]">
-              Direct phone/WhatsApp and active GitHub link must be visible right under your name in the contact header strip.
-            </p>
+        <div className="space-y-3 text-xs text-slate-700">
+          <p>• <strong>Select Your True Domain:</strong> Setting your domain ensures Groq AI uses appropriate terminology (e.g. medical protocols for doctors, GAAP for accountants).</p>
+          <p>• <strong>Specify Time Periods:</strong> Include explicit timelines like <em>(3 Months)</em> or exact years to pass recruiter screening.</p>
+          <p>• <strong>Add Project Links:</strong> Adding portfolio or case study URLs boosts your profile completeness score significantly.</p>
+          <div className="flex justify-end pt-2">
+            <Button variant="primary" size="sm" onClick={() => setHelpModalOpen(false)} className="rounded-xl text-xs font-bold bg-indigo-600">
+              Got It
+            </Button>
           </div>
         </div>
       </Modal>

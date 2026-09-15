@@ -31,7 +31,7 @@ export default function AuthLayout({
       {/* Subtle Auth Footer */}
       <footer className="border-t border-slate-200 py-4 text-center text-xs text-slate-500 bg-white/80 backdrop-blur-xs">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>© {new Date().getFullYear()} TalentForge AI. InvoZone-Standard Career Platform.</span>
+          <span>© {new Date().getFullYear()} TalentForge AI. Enterprise Career Architecture Platform.</span>
           <div className="flex gap-4 font-medium">
             <Link href="/about" className="text-slate-600 hover:text-indigo-600 transition-colors">Privacy & Security</Link>
             <Link href="/pricing" className="text-slate-600 hover:text-indigo-600 transition-colors">Enterprise Plans</Link>

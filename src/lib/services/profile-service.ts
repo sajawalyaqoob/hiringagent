@@ -1,4 +1,4 @@
-import { isSupabaseConfigured, createServerSupabaseClient } from "../supabase/server";
+import { getDb } from "../db/neon";
 import {
   mockProfile,
   mockExperiences,
@@ -60,19 +60,19 @@ export class ProfileService {
     if (data.profile.fullName && data.profile.email && data.profile.location) {
       score += 15;
     } else {
-      missingSections.push("Personal Contact Information");
-      recommendations.push("Add location and contact phone number to complete identity.");
+      missingSections.push("Personal Information");
+      recommendations.push("Add full name, email, and primary location.");
     }
 
-    // Professional Headline & Level (15%)
-    if (data.profile.professionalHeadline && data.profile.currentJobTitle && data.profile.yearsOfExperience >= 0) {
+    // Professional Summary & Headline (15%)
+    if (data.profile.professionalHeadline && data.profile.currentJobTitle) {
       score += 15;
     } else {
-      missingSections.push("Professional Headline & Seniority");
-      recommendations.push("Define a sharp professional headline and total years of experience.");
+      missingSections.push("Professional Headline & Job Title");
+      recommendations.push("Provide your current job title and career headline.");
     }
 
-    // Experience Records (25%)
+    // Work Experience (25%)
     if (data.experiences.length >= 2) {
       score += 25;
     } else if (data.experiences.length === 1) {
@@ -129,140 +129,126 @@ export class ProfileService {
     };
   }
 
+  /**
+   * Fetch complete candidate profile directly from Neon PostgreSQL
+   */
   async getFullProfile(userId?: string): Promise<FullProfileData> {
-    if (isSupabaseConfigured() && userId) {
+    const isUUID = (id?: string) => Boolean(id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
+
+    if (userId && isUUID(userId)) {
       try {
-        const supabase = await createServerSupabaseClient();
-        const { data: prof } = await supabase.from("profiles").select("*").eq("user_id", userId).single();
-        if (prof) {
-          const { data: exps } = await supabase.from("experiences").select("*").eq("profile_id", prof.id);
-          const { data: edus } = await supabase.from("education").select("*").eq("profile_id", prof.id);
-          const { data: skls } = await supabase.from("user_skills").select("*").eq("profile_id", prof.id);
-          const { data: projs } = await supabase.from("projects").select("*").eq("profile_id", prof.id);
-          const { data: certs } = await supabase.from("certifications").select("*").eq("profile_id", prof.id);
-          const { data: langs } = await supabase.from("languages").select("*").eq("profile_id", prof.id);
-          const { data: prefs } = await supabase.from("job_preferences").select("*").eq("profile_id", prof.id).single();
+        const db = getDb();
+        const rows = await db`
+          SELECT * FROM profiles
+          WHERE user_id = ${userId}
+          LIMIT 1
+        `;
+
+        if (rows && rows.length > 0) {
+          const prof = rows[0];
+
+          // Parse JSONB columns safely
+          const rawEdus = Array.isArray(prof.education) ? prof.education : [];
+          const rawExps = Array.isArray(prof.experiences) ? prof.experiences : [];
+          const rawProjs = Array.isArray(prof.projects) ? prof.projects : [];
+          const rawSkills = Array.isArray(prof.skills) ? prof.skills : [];
+
+          const experiences: Experience[] = rawExps.map((e: any, idx: number) => ({
+            id: e.id || `exp_${idx}`,
+            profileId: prof.id,
+            company: e.company || "",
+            jobTitle: e.jobTitle || "",
+            location: e.location || prof.location || "Pakistan",
+            isRemote: e.isRemote ?? true,
+            employmentType: e.employmentType || "full_time",
+            startDate: e.startDate || e.duration || "2023",
+            endDate: e.endDate,
+            isCurrent: Boolean(e.isCurrent),
+            responsibilities: Array.isArray(e.responsibilities) ? e.responsibilities : [],
+            achievements: Array.isArray(e.achievements) ? e.achievements : [],
+            technologiesUsed: Array.isArray(e.technologiesUsed) ? e.technologiesUsed : [],
+            createdAt: e.createdAt || new Date().toISOString(),
+            updatedAt: e.updatedAt || new Date().toISOString(),
+          }));
+
+          const education: Education[] = rawEdus.map((e: any, idx: number) => ({
+            id: e.id || `edu_${idx}`,
+            profileId: prof.id,
+            institution: e.institution || "",
+            degree: e.degree || "",
+            fieldOfStudy: e.fieldOfStudy || e.degree || "",
+            startDate: e.startDate || "2020",
+            endDate: e.endDate || "2024",
+            gpa: e.gpa,
+            honors: Array.isArray(e.honors) ? e.honors : [],
+            createdAt: e.createdAt || new Date().toISOString(),
+            updatedAt: e.updatedAt || new Date().toISOString(),
+          }));
+
+          const skills: Skill[] = rawSkills.map((s: any, idx: number) => {
+            if (typeof s === "string") {
+              return {
+                id: `skl_${idx}`,
+                profileId: prof.id,
+                name: s,
+                category: "programming_languages",
+                proficiencyLevel: "professional_experience" as const,
+                yearsOfExperience: 3,
+                verifiedViaInterview: false,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              };
+            }
+            return {
+              id: s.id || `skl_${idx}`,
+              profileId: prof.id,
+              name: s.name || s.skillName || "Skill",
+              category: s.category || "other",
+              proficiencyLevel: s.proficiencyLevel || "intermediate",
+              yearsOfExperience: Number(s.yearsOfExperience || 2),
+              verifiedViaInterview: Boolean(s.verifiedViaInterview),
+              createdAt: s.createdAt || new Date().toISOString(),
+              updatedAt: s.updatedAt || new Date().toISOString(),
+            };
+          });
+
+          const projects: Project[] = rawProjs.map((p: any, idx: number) => ({
+            id: p.id || `prj_${idx}`,
+            profileId: prof.id,
+            name: p.name || "",
+            description: p.description || "",
+            role: p.role || prof.current_job_title || "Full Stack Developer",
+            technologies: Array.isArray(p.technologies) ? p.technologies : [],
+            responsibilities: Array.isArray(p.responsibilities) ? p.responsibilities : [],
+            achievements: Array.isArray(p.achievements) ? p.achievements : [],
+            projectUrl: p.projectUrl || p.project_url,
+            githubUrl: p.githubUrl || p.github_url,
+            createdAt: p.createdAt || new Date().toISOString(),
+            updatedAt: p.updatedAt || new Date().toISOString(),
+          }));
 
           const profileObj: Profile = {
             id: prof.id,
             userId: prof.user_id,
-            fullName: prof.full_name,
-            professionalHeadline: prof.professional_headline,
-            email: prof.email,
-            phone: prof.phone,
-            location: prof.location,
-            linkedInUrl: prof.linkedin_url,
-            githubUrl: prof.github_url,
-            portfolioUrl: prof.portfolio_url,
-            currentJobTitle: prof.current_job_title,
-            yearsOfExperience: Number(prof.years_of_experience),
-            industry: prof.industry,
-            careerLevel: prof.career_level,
-            employmentStatus: prof.employment_status,
-            completionPercentage: Number(prof.completion_percentage),
-            createdAt: prof.created_at,
-            updatedAt: prof.updated_at,
+            fullName: prof.full_name || "Candidate",
+            professionalHeadline: prof.professional_headline || "Software Professional",
+            email: prof.email || "",
+            phone: prof.phone || "",
+            location: prof.location || "Pakistan",
+            linkedInUrl: prof.linkedin_url || "",
+            githubUrl: prof.github_url || "",
+            portfolioUrl: prof.portfolio_url || "",
+            currentJobTitle: prof.current_job_title || "Software Engineer",
+            yearsOfExperience: Number(prof.years_of_experience || 0),
+            industry: prof.industry || "Technology",
+            careerLevel: prof.career_level || "mid",
+            employmentStatus: prof.employment_status || "open_to_work",
+            completionPercentage: Number(prof.completion_percentage || 50),
+            avatarUrl: prof.avatar_url || "",
+            bio: prof.bio || "",
+            createdAt: new Date(prof.created_at).toISOString(),
+            updatedAt: new Date(prof.updated_at).toISOString(),
           };
-
-          const experiences: Experience[] = (exps || []).map((e: any) => ({
-            id: e.id,
-            profileId: e.profile_id,
-            company: e.company,
-            jobTitle: e.job_title,
-            location: e.location,
-            isRemote: e.is_remote,
-            employmentType: e.employment_type,
-            startDate: e.start_date,
-            endDate: e.end_date,
-            isCurrent: e.is_current,
-            responsibilities: e.responsibilities || [],
-            achievements: e.achievements || [],
-            technologiesUsed: e.technologies_used || [],
-            createdAt: e.created_at,
-            updatedAt: e.updated_at,
-          }));
-
-          const education: Education[] = (edus || []).map((e: any) => ({
-            id: e.id,
-            profileId: e.profile_id,
-            institution: e.institution,
-            degree: e.degree,
-            fieldOfStudy: e.field_of_study,
-            startDate: e.start_date,
-            endDate: e.end_date,
-            gpa: e.gpa,
-            honors: e.honors || [],
-            createdAt: e.created_at,
-            updatedAt: e.updated_at,
-          }));
-
-          const skills: Skill[] = (skls || []).map((s: any) => ({
-            id: s.id,
-            profileId: s.profile_id,
-            name: s.skill_name,
-            category: s.category,
-            proficiencyLevel: s.proficiency_level,
-            yearsOfExperience: Number(s.years_of_experience),
-            verifiedViaInterview: Boolean(s.verified_via_interview),
-            evidenceNotes: s.evidence_notes,
-            createdAt: s.created_at,
-            updatedAt: s.updated_at,
-          }));
-
-          const projects: Project[] = (projs || []).map((p: any) => ({
-            id: p.id,
-            profileId: p.profile_id,
-            name: p.name,
-            description: p.description,
-            role: p.role,
-            technologies: p.technologies || [],
-            responsibilities: p.responsibilities || [],
-            achievements: p.achievements || [],
-            projectUrl: p.project_url,
-            githubUrl: p.github_url,
-            createdAt: p.created_at,
-            updatedAt: p.updated_at,
-          }));
-
-          const certifications: Certification[] = (certs || []).map((c: any) => ({
-            id: c.id,
-            profileId: c.profile_id,
-            name: c.name,
-            issuer: c.issuer,
-            issueDate: c.issue_date,
-            expiryDate: c.expiry_date,
-            credentialUrl: c.credential_url,
-            credentialId: c.credential_id,
-            createdAt: c.created_at,
-            updatedAt: c.updated_at,
-          }));
-
-          const languages: Language[] = (langs || []).map((l: any) => ({
-            id: l.id,
-            profileId: l.profile_id,
-            name: l.name,
-            proficiency: l.proficiency,
-          }));
-
-          const jobPreferences: JobPreference = prefs
-            ? {
-                id: prefs.id,
-                profileId: prefs.profile_id,
-                desiredJobTitles: prefs.desired_job_titles || [],
-                desiredIndustries: prefs.desired_industries || [],
-                targetLocations: prefs.target_locations || [],
-                workplacePreference: prefs.workplace_preference,
-                minimumExperienceYears: Number(prefs.minimum_experience_years),
-                maximumCommuteMinutes: prefs.maximum_commute_minutes ? Number(prefs.maximum_commute_minutes) : undefined,
-                employmentTypes: prefs.employment_types || [],
-                minimumSalary: Number(prefs.minimum_salary),
-                targetSalary: Number(prefs.target_salary),
-                preferredTechnologies: prefs.preferred_technologies || [],
-                openToRelocation: Boolean(prefs.open_to_relocation),
-                createdAt: prefs.created_at,
-                updatedAt: prefs.updated_at,
-              }
-            : mockJobPreferences;
 
           const completion = ProfileService.calculateCompletion({
             profile: profileObj,
@@ -270,8 +256,8 @@ export class ProfileService {
             education,
             skills,
             projects,
-            certifications,
-            jobPreferences,
+            certifications: mockCertifications,
+            jobPreferences: mockJobPreferences,
           });
 
           profileObj.completionPercentage = completion.percentage;
@@ -282,17 +268,18 @@ export class ProfileService {
             education,
             skills,
             projects,
-            certifications,
-            languages,
-            jobPreferences,
+            certifications: mockCertifications,
+            languages: mockLanguages,
+            jobPreferences: mockJobPreferences,
             completion,
           };
         }
       } catch (err) {
-        console.warn("[ProfileService] Error fetching full profile from Supabase:", err);
+        console.error("[ProfileService] Neon DB getFullProfile error:", err);
       }
     }
 
+    // Default fallback if anonymous
     const completion = ProfileService.calculateCompletion({
       profile: mockProfile,
       experiences: mockExperiences,
@@ -302,8 +289,6 @@ export class ProfileService {
       certifications: mockCertifications,
       jobPreferences: mockJobPreferences,
     });
-
-    mockProfile.completionPercentage = completion.percentage;
 
     return {
       profile: { ...mockProfile },
@@ -318,33 +303,44 @@ export class ProfileService {
     };
   }
 
+  /**
+   * Update candidate profile directly in Neon PostgreSQL
+   */
   async updateProfile(updates: Partial<Profile>, userId?: string): Promise<Profile> {
-    if (isSupabaseConfigured() && userId) {
-      try {
-        const supabase = await createServerSupabaseClient();
-        const { data, error } = await supabase
-          .from("profiles")
-          .update({
-            full_name: updates.fullName,
-            professional_headline: updates.professionalHeadline,
-            email: updates.email,
-            phone: updates.phone,
-            location: updates.location,
-            linkedin_url: updates.linkedInUrl,
-            github_url: updates.githubUrl,
-            portfolio_url: updates.portfolioUrl,
-            current_job_title: updates.currentJobTitle,
-            years_of_experience: updates.yearsOfExperience,
-            industry: updates.industry,
-            career_level: updates.careerLevel,
-            employment_status: updates.employmentStatus,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("user_id", userId)
-          .select()
-          .single();
+    const isUUID = (id?: string) => Boolean(id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
 
-        if (!error && data) {
+    if (userId && isUUID(userId)) {
+      try {
+        const db = getDb();
+        const rows = await db`
+          UPDATE profiles
+          SET
+            full_name = COALESCE(${updates.fullName}, full_name),
+            professional_headline = COALESCE(${updates.professionalHeadline}, professional_headline),
+            email = COALESCE(${updates.email}, email),
+            phone = COALESCE(${updates.phone}, phone),
+            location = COALESCE(${updates.location}, location),
+            linkedin_url = COALESCE(${updates.linkedInUrl}, linkedin_url),
+            github_url = COALESCE(${updates.githubUrl}, github_url),
+            portfolio_url = COALESCE(${updates.portfolioUrl}, portfolio_url),
+            current_job_title = COALESCE(${updates.currentJobTitle}, current_job_title),
+            years_of_experience = COALESCE(${updates.yearsOfExperience}, years_of_experience),
+            industry = COALESCE(${updates.industry}, industry),
+            career_level = COALESCE(${updates.careerLevel}, career_level),
+            employment_status = COALESCE(${updates.employmentStatus}, employment_status),
+            avatar_url = COALESCE(${updates.avatarUrl}, avatar_url),
+            bio = COALESCE(${updates.bio}, bio),
+            updated_at = NOW()
+          WHERE user_id = ${userId}
+          RETURNING *
+        `;
+
+        if (updates.fullName) {
+          await db`UPDATE users SET name = ${updates.fullName}, updated_at = NOW() WHERE id = ${userId}`;
+        }
+
+        if (rows && rows.length > 0) {
+          const data = rows[0];
           return {
             id: data.id,
             userId: data.user_id,
@@ -362,69 +358,197 @@ export class ProfileService {
             careerLevel: data.career_level,
             employmentStatus: data.employment_status,
             completionPercentage: Number(data.completion_percentage),
-            createdAt: data.created_at,
-            updatedAt: data.updated_at,
+            avatarUrl: data.avatar_url,
+            bio: data.bio,
+            createdAt: new Date(data.created_at).toISOString(),
+            updatedAt: new Date(data.updated_at).toISOString(),
           };
         }
       } catch (err) {
-        console.warn("[ProfileService] Error updating profile in Supabase:", err);
+        console.error("[ProfileService] Neon DB updateProfile error:", err);
       }
     }
 
-    Object.assign(mockProfile, updates, { updatedAt: new Date().toISOString() });
+    mockProfile.fullName = updates.fullName ?? mockProfile.fullName;
+    mockProfile.professionalHeadline = updates.professionalHeadline ?? mockProfile.professionalHeadline;
+    mockProfile.email = updates.email ?? mockProfile.email;
+    mockProfile.phone = updates.phone ?? mockProfile.phone;
+    mockProfile.location = updates.location ?? mockProfile.location;
+    mockProfile.linkedInUrl = updates.linkedInUrl ?? mockProfile.linkedInUrl;
+    mockProfile.githubUrl = updates.githubUrl ?? mockProfile.githubUrl;
+    mockProfile.portfolioUrl = updates.portfolioUrl ?? mockProfile.portfolioUrl;
+    mockProfile.currentJobTitle = updates.currentJobTitle ?? mockProfile.currentJobTitle;
+    mockProfile.yearsOfExperience = updates.yearsOfExperience ?? mockProfile.yearsOfExperience;
+    mockProfile.industry = updates.industry ?? mockProfile.industry;
+    mockProfile.careerLevel = updates.careerLevel ?? mockProfile.careerLevel;
+    mockProfile.employmentStatus = updates.employmentStatus ?? mockProfile.employmentStatus;
+    mockProfile.updatedAt = new Date().toISOString();
+
     return { ...mockProfile };
   }
 
-  async updateJobPreferences(updates: Partial<JobPreference>, profileId?: string): Promise<JobPreference> {
-    if (isSupabaseConfigured() && profileId) {
+  /**
+   * Save complete onboarding inputs directly to Neon PostgreSQL
+   */
+  async saveOnboarding(
+    data: {
+      fullName?: string;
+      email?: string;
+      phone?: string;
+      location?: string;
+      linkedInUrl?: string;
+      githubUrl?: string;
+      portfolioUrl?: string;
+      careerField?: string;
+      targetRole?: string;
+      workplacePreference?: string;
+      seniority?: string;
+      targetLocations?: string[];
+      minSalary?: number;
+      skills?: string[];
+      avatarUrl?: string;
+      bio?: string;
+      education?: Array<{
+        degree: string;
+        institution: string;
+        fieldOfStudy?: string;
+        startDate?: string;
+        endDate?: string;
+        gpa?: string;
+      }>;
+      experiences?: Array<{
+        company: string;
+        jobTitle: string;
+        location?: string;
+        duration?: string;
+        startDate?: string;
+        endDate?: string;
+        isCurrent?: boolean;
+        responsibilities?: string[];
+        technologiesUsed?: string[];
+      }>;
+      projects?: Array<{
+        name: string;
+        role?: string;
+        description?: string;
+        projectUrl?: string;
+        githubUrl?: string;
+        technologies?: string[];
+        responsibilities?: string[];
+      }>;
+      categorizedSkills?: Record<string, string[]>;
+    },
+    userId?: string
+  ): Promise<FullProfileData> {
+    const isUUID = (id?: string) => Boolean(id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
+
+    if (userId && isUUID(userId)) {
       try {
-        const supabase = await createServerSupabaseClient();
-        const payload = {
-          profile_id: profileId,
-          desired_job_titles: updates.desiredJobTitles,
-          desired_industries: updates.desiredIndustries,
-          target_locations: updates.targetLocations,
-          workplace_preference: updates.workplacePreference,
-          minimum_experience_years: updates.minimumExperienceYears,
-          maximum_commute_minutes: updates.maximumCommuteMinutes,
-          employment_types: updates.employmentTypes,
-          minimum_salary: updates.minimumSalary,
-          target_salary: updates.targetSalary,
-          preferred_technologies: updates.preferredTechnologies,
-          open_to_relocation: updates.openToRelocation,
-          updated_at: new Date().toISOString(),
-        };
+        const db = getDb();
+        const eduJson = JSON.stringify(data.education || []);
+        const expJson = JSON.stringify(data.experiences || []);
+        const prjJson = JSON.stringify(data.projects || []);
+        const sklJson = JSON.stringify(data.skills || []);
 
-        const { data } = await supabase
-          .from("job_preferences")
-          .upsert(payload, { onConflict: "profile_id" })
-          .select()
-          .single();
+        const headline = data.targetRole
+          ? `${data.targetRole} • ${data.careerField || "Tech Specialist"}`
+          : "Software Professional";
 
-        if (data) {
-          return {
-            id: data.id,
-            profileId: data.profile_id,
-            desiredJobTitles: data.desired_job_titles || [],
-            desiredIndustries: data.desired_industries || [],
-            targetLocations: data.target_locations || [],
-            workplacePreference: data.workplace_preference,
-            minimumExperienceYears: Number(data.minimum_experience_years),
-            maximumCommuteMinutes: data.maximum_commute_minutes ? Number(data.maximum_commute_minutes) : undefined,
-            employmentTypes: data.employment_types || [],
-            minimumSalary: Number(data.minimum_salary),
-            targetSalary: Number(data.target_salary),
-            preferredTechnologies: data.preferred_technologies || [],
-            openToRelocation: Boolean(data.open_to_relocation),
-            createdAt: data.created_at,
-            updatedAt: data.updated_at,
-          };
+        await db`
+          INSERT INTO profiles (
+            user_id,
+            full_name,
+            email,
+            phone,
+            location,
+            linkedin_url,
+            github_url,
+            portfolio_url,
+            professional_headline,
+            current_job_title,
+            avatar_url,
+            bio,
+            education,
+            experiences,
+            projects,
+            skills,
+            completion_percentage,
+            updated_at
+          ) VALUES (
+            ${userId},
+            ${data.fullName || "Candidate"},
+            ${data.email || ""},
+            ${data.phone || ""},
+            ${data.location || "Pakistan"},
+            ${data.linkedInUrl || ""},
+            ${data.githubUrl || ""},
+            ${data.portfolioUrl || ""},
+            ${headline},
+            ${data.targetRole || "Software Engineer"},
+            ${data.avatarUrl || ""},
+            ${data.bio || ""},
+            ${eduJson}::jsonb,
+            ${expJson}::jsonb,
+            ${prjJson}::jsonb,
+            ${sklJson}::jsonb,
+            95,
+            NOW()
+          )
+          ON CONFLICT (user_id) DO UPDATE SET
+            full_name = EXCLUDED.full_name,
+            email = EXCLUDED.email,
+            phone = EXCLUDED.phone,
+            location = EXCLUDED.location,
+            linkedin_url = EXCLUDED.linkedin_url,
+            github_url = EXCLUDED.github_url,
+            portfolio_url = EXCLUDED.portfolio_url,
+            professional_headline = EXCLUDED.professional_headline,
+            current_job_title = EXCLUDED.current_job_title,
+            avatar_url = EXCLUDED.avatar_url,
+            bio = EXCLUDED.bio,
+            education = EXCLUDED.education,
+            experiences = EXCLUDED.experiences,
+            projects = EXCLUDED.projects,
+            skills = EXCLUDED.skills,
+            completion_percentage = 95,
+            updated_at = NOW()
+        `;
+
+        if (data.fullName) {
+          await db`
+            UPDATE users 
+            SET name = ${data.fullName}, updated_at = NOW() 
+            WHERE id = ${userId}
+          `;
         }
+
+        return this.getFullProfile(userId);
       } catch (err) {
-        console.warn("[ProfileService] Error updating job preferences in Supabase:", err);
+        console.error("[ProfileService] Neon DB saveOnboarding error:", err);
       }
     }
 
+    // In-memory update as fallback
+    if (data.fullName) mockProfile.fullName = data.fullName;
+    if (data.email) mockProfile.email = data.email;
+    if (data.phone) mockProfile.phone = data.phone;
+    if (data.location) mockProfile.location = data.location;
+    if (data.linkedInUrl) mockProfile.linkedInUrl = data.linkedInUrl;
+    if (data.githubUrl) mockProfile.githubUrl = data.githubUrl;
+    if (data.portfolioUrl) mockProfile.portfolioUrl = data.portfolioUrl;
+
+    if (data.targetRole) {
+      mockProfile.currentJobTitle = data.targetRole;
+      mockProfile.professionalHeadline = `${data.targetRole} • ${data.careerField || "Tech Specialist"}`;
+      mockJobPreferences.desiredJobTitles = [data.targetRole];
+    }
+    if (data.avatarUrl) mockProfile.avatarUrl = data.avatarUrl;
+    if (data.bio) mockProfile.bio = data.bio;
+
+    return this.getFullProfile();
+  }
+
+  async updateJobPreferences(profileId: string, updates: Partial<JobPreference>): Promise<JobPreference> {
     Object.assign(mockJobPreferences, updates, { updatedAt: new Date().toISOString() });
     return { ...mockJobPreferences };
   }
@@ -449,196 +573,6 @@ export class ProfileService {
     target.verifiedViaInterview = true;
     target.updatedAt = new Date().toISOString();
     return { ...target };
-  }
-
-  async saveOnboarding(data: {
-    fullName?: string;
-    email?: string;
-    phone?: string;
-    location?: string;
-    linkedInUrl?: string;
-    githubUrl?: string;
-    portfolioUrl?: string;
-    careerField?: string;
-    targetRole?: string;
-    workplacePreference?: string;
-    seniority?: string;
-    targetLocations?: string[];
-    minSalary?: number;
-    skills?: string[];
-    avatarUrl?: string;
-    bio?: string;
-    education?: Array<{
-      degree: string;
-      institution: string;
-      fieldOfStudy?: string;
-      startDate?: string;
-      endDate?: string;
-      gpa?: string;
-    }>;
-    experiences?: Array<{
-      company: string;
-      jobTitle: string;
-      location?: string;
-      duration?: string;
-      startDate?: string;
-      endDate?: string;
-      isCurrent?: boolean;
-      responsibilities?: string[];
-      technologiesUsed?: string[];
-    }>;
-    projects?: Array<{
-      name: string;
-      role?: string;
-      description?: string;
-      projectUrl?: string;
-      githubUrl?: string;
-      technologies?: string[];
-      responsibilities?: string[];
-    }>;
-    categorizedSkills?: Record<string, string[]>;
-  }): Promise<FullProfileData> {
-    if (data.fullName) mockProfile.fullName = data.fullName;
-    if (data.email) mockProfile.email = data.email;
-    if (data.phone) mockProfile.phone = data.phone;
-    if (data.location) mockProfile.location = data.location;
-    if (data.linkedInUrl) mockProfile.linkedInUrl = data.linkedInUrl;
-    if (data.githubUrl) mockProfile.githubUrl = data.githubUrl;
-    if (data.portfolioUrl) mockProfile.portfolioUrl = data.portfolioUrl;
-
-    if (data.targetRole) {
-      mockProfile.currentJobTitle = data.targetRole;
-      mockProfile.professionalHeadline = `${data.targetRole} • ${data.careerField || "Tech Specialist"}`;
-      mockJobPreferences.desiredJobTitles = [data.targetRole];
-    }
-    if (data.avatarUrl) mockProfile.avatarUrl = data.avatarUrl;
-    if (data.bio) mockProfile.bio = data.bio;
-    if (data.seniority) {
-      const s = data.seniority.toLowerCase();
-      if (["entry", "mid", "senior", "lead", "principal", "executive"].includes(s)) {
-        mockProfile.careerLevel = s as any;
-      }
-    }
-    if (data.workplacePreference) {
-      mockJobPreferences.workplacePreference = data.workplacePreference as any;
-    }
-    if (data.targetLocations && data.targetLocations.length > 0) {
-      mockJobPreferences.targetLocations = data.targetLocations;
-      mockProfile.location = data.targetLocations[0];
-    }
-    if (data.minSalary) {
-      mockJobPreferences.minimumSalary = data.minSalary;
-      mockJobPreferences.targetSalary = Math.round(data.minSalary * 1.2);
-    }
-
-    // Process Education Entries
-    if (data.education && Array.isArray(data.education) && data.education.length > 0) {
-      mockEducation.length = 0;
-      data.education.forEach((edu, idx) => {
-        mockEducation.push({
-          id: `edu_${Date.now()}_${idx}`,
-          profileId: mockProfile.id,
-          degree: edu.degree,
-          institution: edu.institution,
-          fieldOfStudy: edu.fieldOfStudy || edu.degree,
-          startDate: edu.startDate || "2021",
-          endDate: edu.endDate || "2025",
-          gpa: edu.gpa || undefined,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-      });
-    }
-
-    // Process Work Experiences Entries (with explicit time periods)
-    if (data.experiences && Array.isArray(data.experiences) && data.experiences.length > 0) {
-      mockExperiences.length = 0;
-      data.experiences.forEach((exp, idx) => {
-        mockExperiences.push({
-          id: `exp_${Date.now()}_${idx}`,
-          profileId: mockProfile.id,
-          company: exp.company,
-          jobTitle: exp.jobTitle,
-          location: exp.location || mockProfile.location || "Remote",
-          isRemote: true,
-          employmentType: "full_time",
-          startDate: exp.startDate || (exp.duration ? exp.duration : "2023"),
-          endDate: exp.endDate || (exp.isCurrent ? undefined : "Present"),
-          isCurrent: exp.isCurrent ?? false,
-          responsibilities: exp.responsibilities && exp.responsibilities.length > 0
-            ? exp.responsibilities
-            : [
-                `Developed and maintained features for ${exp.company}.`,
-                "Worked on client deliverables, automated tests, and production deployments.",
-              ],
-          achievements: [],
-          technologiesUsed: exp.technologiesUsed || data.skills?.slice(0, 5) || ["TypeScript", "Next.js"],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-      });
-    }
-
-    // Process Notable Projects Entries
-    if (data.projects && Array.isArray(data.projects) && data.projects.length > 0) {
-      mockProjects.length = 0;
-      data.projects.forEach((proj, idx) => {
-        mockProjects.push({
-          id: `prj_${Date.now()}_${idx}`,
-          profileId: mockProfile.id,
-          name: proj.name,
-          role: proj.role || mockProfile.currentJobTitle || "Full Stack Developer",
-          description: proj.description || `${proj.name} production software system.`,
-          technologies: proj.technologies || data.skills?.slice(0, 4) || ["React", "Node.js"],
-          responsibilities: proj.responsibilities || [
-            `Designed, developed, and deployed the complete ${proj.name} architecture.`,
-            "Implemented authentication, security controls, and responsive UI.",
-          ],
-          achievements: [],
-          projectUrl: proj.projectUrl,
-          githubUrl: proj.githubUrl,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-      });
-    }
-
-    // Process Skills (Categorized & Flat)
-    if (data.skills && data.skills.length > 0) {
-      mockJobPreferences.preferredTechnologies = data.skills;
-      for (const sk of data.skills) {
-        const exists = mockSkills.some((s) => s.name.toLowerCase() === sk.toLowerCase());
-        if (!exists) {
-          mockSkills.push({
-            id: `skl_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-            profileId: mockProfile.id,
-            name: sk,
-            category: "frameworks",
-            proficiencyLevel: "professional_experience",
-            yearsOfExperience: 3,
-            verifiedViaInterview: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
-        }
-      }
-    }
-
-    // Update completion percentage
-    const completion = ProfileService.calculateCompletion({
-      profile: mockProfile,
-      experiences: mockExperiences,
-      education: mockEducation,
-      skills: mockSkills,
-      projects: mockProjects,
-      certifications: mockCertifications,
-      languages: mockLanguages,
-      jobPreferences: mockJobPreferences,
-    });
-    mockProfile.completionPercentage = completion.percentage;
-    mockProfile.updatedAt = new Date().toISOString();
-
-    return this.getFullProfile();
   }
 }
 

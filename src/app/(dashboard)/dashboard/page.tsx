@@ -13,26 +13,27 @@ import {
   Search,
   HelpCircle,
   Clock,
-  Globe,
   Printer,
   ExternalLink,
   ShieldCheck,
   Phone,
-  Mail,
-  GitBranch,
   ChevronRight,
   Eye,
   MapPin,
   User,
+  AlertTriangle,
+  Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
+import { getDomainById } from "@/lib/config/domains";
 
 export default function DashboardOverviewPage() {
   const [userName, setUserName] = React.useState("Candidate");
-  const [userRole, setUserRole] = React.useState("Full Stack Developer");
+  const [userRole, setUserRole] = React.useState("Professional Specialist");
+  const [userDomain, setUserDomain] = React.useState("Computer Science & IT");
   const [matchingCount, setMatchingCount] = React.useState(250);
   const [recentMatches, setRecentMatches] = React.useState<any[]>([]);
   const [guideModalOpen, setGuideModalOpen] = React.useState(false);
@@ -51,26 +52,50 @@ export default function DashboardOverviewPage() {
   const [experienceList, setExperienceList] = React.useState<any[]>([]);
   const [projectList, setProjectList] = React.useState<any[]>([]);
   const [skillsList, setSkillsList] = React.useState<string[]>([]);
+  const [subscriptionStatus, setSubscriptionStatus] = React.useState<string>("active");
+
+  // Groq AI Profile Analysis state
+  const [aiAnalysis, setAiAnalysis] = React.useState<any>(null);
+  const [loadingAi, setLoadingAi] = React.useState<boolean>(true);
 
   React.useEffect(() => {
     async function loadDashboardData() {
       try {
-        const [profRes, jobsRes] = await Promise.all([
+        const [profRes, jobsRes, authRes, analyzeRes] = await Promise.all([
           fetch("/api/profile").then((r) => r.json()).catch(() => null),
           fetch("/api/jobs").then((r) => r.json()).catch(() => null),
+          fetch("/api/auth").then((r) => r.json()).catch(() => null),
+          fetch("/api/profile/analyze").then((r) => r.json()).catch(() => null),
         ]);
+
+        if (authRes?.user) {
+          setSubscriptionStatus(authRes.user.subscriptionStatus || "pending_payment");
+          if (authRes.user.name) {
+            setUserName(authRes.user.name.split(" ")[0]);
+          }
+        }
 
         if (profRes?.success && profRes.data) {
           const p = profRes.data.profile;
           if (p) {
             setProfile(p);
-            if (p.fullName) setUserName(p.fullName.split(" ")[0]);
+            if (p.fullName && p.fullName !== "Candidate") {
+              setUserName(p.fullName.split(" ")[0]);
+            }
             if (p.currentJobTitle) setUserRole(p.currentJobTitle);
+            if (p.industry) {
+              const domObj = getDomainById(p.industry);
+              setUserDomain(domObj.label);
+            }
           }
           if (profRes.data.education) setEducationList(profRes.data.education);
           if (profRes.data.experiences) setExperienceList(profRes.data.experiences);
           if (profRes.data.projects) setProjectList(profRes.data.projects);
-          if (profRes.data.skills) setSkillsList(profRes.data.skills.map((s: any) => s.name));
+          if (profRes.data.skills) setSkillsList(profRes.data.skills.map((s: any) => (typeof s === "string" ? s : s.name)));
+        }
+
+        if (analyzeRes?.success && analyzeRes.data) {
+          setAiAnalysis(analyzeRes.data);
         }
 
         if (jobsRes?.success && Array.isArray(jobsRes.data)) {
@@ -92,6 +117,8 @@ export default function DashboardOverviewPage() {
         }
       } catch (err) {
         console.warn("Error loading dashboard live data:", err);
+      } finally {
+        setLoadingAi(false);
       }
     }
 
@@ -103,7 +130,58 @@ export default function DashboardOverviewPage() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Welcome Header & Guidance CTA */}
+      {/* JazzCash Payment Alert Banner */}
+      {subscriptionStatus === "pending_approval" ? (
+        <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="rounded-xl bg-amber-500/20 p-2 text-amber-700">
+              <Clock className="h-5 w-5" />
+            </div>
+            <div className="space-y-0.5 text-xs">
+              <p className="font-bold text-sm text-amber-950">
+                JazzCash Payment Under Admin Review
+              </p>
+              <p className="text-amber-800 leading-relaxed">
+                Your payment screenshot has been received and is currently being verified. Your account will be activated shortly.
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/billing">
+            <Button size="sm" variant="outline" className="font-bold text-xs shrink-0 border-amber-300 text-amber-900 bg-white hover:bg-amber-100">
+              View Payment Status
+            </Button>
+          </Link>
+        </div>
+      ) : subscriptionStatus !== "active" ? (
+        <div className="rounded-2xl border border-rose-200 bg-gradient-to-r from-rose-50 via-white to-amber-50 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="rounded-xl bg-rose-500/20 p-2 text-rose-700">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <div className="space-y-0.5 text-xs">
+              <div className="flex items-center gap-2">
+                <p className="font-bold text-sm text-rose-950">
+                  Account Activation Required (Pakistan JazzCash)
+                </p>
+                <span className="rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5">
+                  Unpaid
+                </span>
+              </div>
+              <p className="text-slate-600 leading-relaxed">
+                Transfer your subscription fee (Weekly: Rs. 1,499 | Monthly: Rs. 3,499) to JazzCash number <strong>03016532878</strong> to unlock all AI tools.
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/billing">
+            <Button size="sm" variant="primary" className="font-bold text-xs shrink-0 shadow-xs gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white">
+              <span>Activate via JazzCash</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </Link>
+        </div>
+      ) : null}
+
+      {/* 1. Dynamic Welcome Banner */}
       <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-r from-white via-indigo-50/20 to-white p-5 sm:p-6 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="space-y-1">
@@ -113,12 +191,11 @@ export default function DashboardOverviewPage() {
               </h1>
               <Badge variant="success" className="gap-1 font-semibold">
                 <CheckCircle2 className="h-3 w-3" />
-                InvoZone Standard Active
+                {userDomain} Profile Calibrated
               </Badge>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 max-w-2xl leading-relaxed">
-              Your profile is calibrated as <strong className="text-slate-800 font-semibold">{userRole}</strong>.
-              You have <strong className="text-indigo-600 font-bold">{matchingCount} live positions</strong> ready for direct application.
+              Your profile is customized for <strong className="text-slate-800 font-semibold">{userRole}</strong> in <strong className="text-indigo-600 font-bold">{userDomain}</strong>.
             </p>
           </div>
 
@@ -134,42 +211,128 @@ export default function DashboardOverviewPage() {
             </Button>
 
             <Link href="/dashboard/create">
-              <Button variant="primary" size="sm" className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 shadow-sm">
+              <Button variant="primary" size="sm" className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm">
                 <FileText className="h-3.5 w-3.5 mr-1" />
-                View & Print InvoZone CV
+                Executive CV Studio
               </Button>
             </Link>
           </div>
         </div>
       </div>
 
-      {/* 2. Three Clean, High-Value Core Cards (Decluttered UI) */}
+      {/* 2. Groq AI Profile Strength Analysis Card */}
+      <div className="rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50/60 via-white to-violet-50/50 p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-black text-slate-900 tracking-tight">
+                  Groq AI Profile Strength Analysis
+                </h2>
+                <Badge variant="info">
+                  {aiAnalysis?.fieldDomain || userDomain}
+                </Badge>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Evaluated specifically for candidate domain and ATS alignment.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="text-right">
+              <div className="text-2xl font-black text-indigo-600">
+                {aiAnalysis?.overallScore || 85}%
+              </div>
+              <span className="text-[10px] uppercase font-bold text-slate-400">
+                {aiAnalysis?.gradeLabel || "Strong Candidate"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Strengths & Missing Field Gaps */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          {/* Highlighted Strengths */}
+          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-4 space-y-2">
+            <span className="font-extrabold uppercase text-[11px] text-emerald-800 flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              Highlighted Domain Strengths
+            </span>
+            <ul className="space-y-1.5 text-slate-700 font-medium">
+              {aiAnalysis?.strengthsHighlighted?.map((str: string, idx: number) => (
+                <li key={idx} className="flex items-start gap-1.5">
+                  <span className="text-emerald-600 font-bold">•</span>
+                  <span>{str}</span>
+                </li>
+              )) || (
+                <li className="text-slate-500 italic">Complete profile details to see Groq AI strengths analysis.</li>
+              )}
+            </ul>
+          </div>
+
+          {/* Missing Field Gaps & Recommendations */}
+          <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 space-y-2">
+            <span className="font-extrabold uppercase text-[11px] text-amber-900 flex items-center gap-1.5">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              Recommended Field Additions
+            </span>
+            <ul className="space-y-1.5 text-slate-700 font-medium">
+              {aiAnalysis?.missingFieldGaps?.map((gap: string, idx: number) => (
+                <li key={idx} className="flex items-start gap-1.5">
+                  <span className="text-amber-600 font-bold">•</span>
+                  <span>{gap}</span>
+                </li>
+              )) || (
+                <li className="text-slate-500 italic">Add specific certifications or portfolio links to increase impact.</li>
+              )}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Three Core Action Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-        {/* Card 1: InvoZone-Standard CV Status */}
+        {/* Card 1: Resume Status */}
         <Card className="hover:border-indigo-300 transition-all p-5 shadow-xs flex flex-col justify-between">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600">
-                Professional Resume
+                Personalized Resume
               </span>
               <div className="h-8 w-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                 <FileText className="h-4 w-4" />
               </div>
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">InvoZone-Standard CV</h3>
+              <h3 className="text-base font-bold text-slate-900">Executive CV Sheet</h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Complete with photo, education, experiences with exact time periods, and project links.
+                Formatted specifically for {userDomain} with education, experiences, and project links.
               </p>
             </div>
-            <div className="space-y-1 text-xs text-slate-600 pt-1 border-t border-slate-100">
+            <div className="space-y-1.5 text-xs text-slate-600 pt-1 border-t border-slate-100">
               <div className="flex items-center gap-1.5 font-medium">
                 <GraduationCap className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
-                <span className="truncate">{educationList[0]?.degree || "BS Computer Science (BSCS)"}</span>
+                {educationList.length > 0 ? (
+                  <span className="truncate">{educationList[0].degree} — {educationList[0].institution}</span>
+                ) : (
+                  <Link href="/onboarding" className="text-indigo-600 hover:underline text-[11px] font-semibold">
+                    + Add your degree & university
+                  </Link>
+                )}
               </div>
               <div className="flex items-center gap-1.5 font-medium">
                 <Clock className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                <span className="truncate">{experienceList[0]?.company || "UET Incubation Center"} {experienceList[0]?.duration || "(3 Months)"}</span>
+                {experienceList.length > 0 ? (
+                  <span className="truncate">{experienceList[0].company} • {experienceList[0].duration || "(Current)"}</span>
+                ) : (
+                  <Link href="/onboarding" className="text-emerald-600 hover:underline text-[11px] font-semibold">
+                    + Add work experience & duration
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -184,21 +347,21 @@ export default function DashboardOverviewPage() {
           </div>
         </Card>
 
-        {/* Card 2: Live Job Matches & 1-Click Search */}
+        {/* Card 2: Live Job Matches */}
         <Card className="hover:border-emerald-300 transition-all p-5 shadow-xs flex flex-col justify-between">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-600">
-                Dynamic Job Discovery
+                Dynamic Job Search
               </span>
               <div className="h-8 w-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                 <Briefcase className="h-4 w-4" />
               </div>
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">{matchingCount} Live Tech Jobs</h3>
+              <h3 className="text-base font-bold text-slate-900">{matchingCount} Opportunities</h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Real-time openings matched against your skills with direct 1-click external query buttons.
+                Query postings matching {userRole} in {userDomain}.
               </p>
             </div>
             <div className="flex flex-wrap gap-1.5 pt-1 border-t border-slate-100">
@@ -236,26 +399,26 @@ export default function DashboardOverviewPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-violet-600">
-                AI Application Studio
+                AI Tailor Studio
               </span>
               <div className="h-8 w-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
                 <Sparkles className="h-4 w-4" />
               </div>
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">Instant AI Tailor</h3>
+              <h3 className="text-base font-bold text-slate-900">Company Customizer</h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Generate customized cover letters, recruiter InMails, and tailored bullets for any company in seconds.
+                Generate customized cover letters and recruiter emails tailored for any employer.
               </p>
             </div>
             <div className="rounded-lg bg-violet-50/60 p-2.5 border border-violet-100 text-[11px] text-violet-800">
-              ⚡ Powered by Groq AI — zero hallucinations.
+              ⚡ Powered by Groq AI for {userDomain}.
             </div>
           </div>
 
           <div className="pt-4 mt-2">
             <Link href="/dashboard/create">
-              <Button variant="primary" size="sm" className="w-full rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700">
+              <Button variant="primary" size="sm" className="w-full rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white">
                 <span>Open AI Studio</span>
                 <ArrowRight className="h-3.5 w-3.5 ml-1" />
               </Button>
@@ -264,20 +427,20 @@ export default function DashboardOverviewPage() {
         </Card>
       </div>
 
-      {/* 3. Live Candidate Card Preview (InvoZone Agency Style) */}
+      {/* 4. Candidate Profile Card */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3.5">
             <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full ring-2 ring-indigo-500 shadow-sm bg-slate-100 flex items-center justify-center">
               {profile.avatarUrl ? (
-                <img src={profile.avatarUrl} alt={profile.fullName || "Candidate"} className="h-full w-full object-cover" />
+                <img src={profile.avatarUrl} alt={profile.fullName || userName} className="h-full w-full object-cover" />
               ) : (
                 <User className="h-7 w-7 text-slate-400" />
               )}
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900">{profile.fullName || userName || "Candidate Profile"}</h2>
-              <p className="text-xs font-bold text-indigo-600">{profile.professionalHeadline || userRole || "Professional Candidate"}</p>
+              <h2 className="text-lg font-black text-slate-900">{profile.fullName || userName}</h2>
+              <p className="text-xs font-bold text-indigo-600">{profile.professionalHeadline || userRole}</p>
               <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 mt-0.5">
                 {profile.location && (
                   <span className="flex items-center gap-1">
@@ -291,12 +454,6 @@ export default function DashboardOverviewPage() {
                     {profile.phone}
                   </span>
                 )}
-                {profile.githubUrl && (
-                  <span className="flex items-center gap-1">
-                    <GitBranch className="h-3 w-3 text-slate-400" />
-                    {profile.githubUrl}
-                  </span>
-                )}
               </div>
             </div>
           </div>
@@ -304,13 +461,13 @@ export default function DashboardOverviewPage() {
           <div className="flex items-center gap-2">
             <Link href="/onboarding">
               <Button variant="outline" size="sm" className="rounded-xl text-xs font-semibold border-slate-300">
-                Edit Details
+                Edit Onboarding & Domain
               </Button>
             </Link>
             <Link href="/dashboard/create">
               <Button variant="primary" size="sm" className="rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white gap-1">
                 <Printer className="h-3.5 w-3.5" />
-                InvoZone CV Studio
+                Executive CV Studio
               </Button>
             </Link>
           </div>
@@ -321,7 +478,7 @@ export default function DashboardOverviewPage() {
           <div className="space-y-1.5 rounded-xl border border-slate-100 bg-slate-50/50 p-3.5">
             <span className="font-extrabold uppercase text-[10px] text-slate-400 flex items-center gap-1">
               <GraduationCap className="h-3.5 w-3.5 text-indigo-600" />
-              Education
+              Education & Credentials
             </span>
             {educationList.length > 0 ? (
               <>
@@ -351,12 +508,12 @@ export default function DashboardOverviewPage() {
           <div className="space-y-1.5 rounded-xl border border-slate-100 bg-slate-50/50 p-3.5">
             <span className="font-extrabold uppercase text-[10px] text-slate-400 flex items-center gap-1">
               <FolderGit2 className="h-3.5 w-3.5 text-violet-600" />
-              Key Project
+              Key Domain Project
             </span>
             {projectList.length > 0 ? (
               <>
                 <p className="font-bold text-slate-900">{projectList[0].name}</p>
-                <p className="text-slate-500 text-[11px] truncate">{projectList[0].projectUrl || projectList[0].githubUrl || "Live application"}</p>
+                <p className="text-slate-500 text-[11px] truncate">{projectList[0].projectUrl || projectList[0].githubUrl || "Live project"}</p>
               </>
             ) : (
               <p className="text-slate-400 text-[11px] italic">No projects added yet. Click &quot;Edit Details&quot; to add.</p>
@@ -365,58 +522,12 @@ export default function DashboardOverviewPage() {
         </div>
       </div>
 
-      {/* 4. Top Matched Opportunities List */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between text-xs text-slate-500">
-          <span className="font-bold text-slate-800">Top Recommended Matches for You</span>
-          <Link href="/dashboard/jobs" className="text-indigo-600 hover:text-indigo-700 font-bold flex items-center">
-            View all {matchingCount} live jobs <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {recentMatches.map((job) => (
-            <Card key={job.id} className="p-4 space-y-2.5 hover:border-indigo-300 transition-all">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 line-clamp-1">{job.title}</h4>
-                  <p className="text-[11px] text-indigo-600 font-semibold">{job.company} • {job.location}</p>
-                </div>
-                <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[11px] font-black shrink-0">
-                  {job.matchScore}%
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {job.skills.slice(0, 3).map((sk: string) => (
-                  <span key={sk} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
-                    {sk}
-                  </span>
-                ))}
-              </div>
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="font-bold text-slate-800 text-[11px]">{job.salary}</span>
-                {job.sourceUrl && (
-                  <a
-                    href={job.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-indigo-600 hover:text-indigo-700 font-bold text-[11px] flex items-center gap-0.5"
-                  >
-                    Direct Apply <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
-
       {/* Guided Walkthrough Modal */}
       <Modal
         isOpen={guideModalOpen}
         onClose={() => setGuideModalOpen(false)}
-        title="💡 New User Guided Walkthrough"
-        description="Here is how to get the most out of your career platform in 4 simple steps:"
+        title="💡 User Guided Walkthrough"
+        description="How to get the most out of your career platform:"
       >
         <div className="space-y-4 text-xs text-slate-700">
           <div className="flex items-start gap-3 rounded-xl bg-indigo-50/60 p-3 border border-indigo-100">
@@ -424,9 +535,9 @@ export default function DashboardOverviewPage() {
               1
             </div>
             <div>
-              <h4 className="font-bold text-indigo-950">Complete Your InvoZone-Standard Profile</h4>
+              <h4 className="font-bold text-indigo-950">Select Your Career Domain</h4>
               <p className="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
-                Add your phone number, GitHub link, degree, and work experience with exact time periods (e.g. <em>&quot;(3 Months)&quot;</em>) in the Onboarding or Profile wizard.
+                Whether you are an Accountant, Doctor, Engineer, Teacher, Lawyer, Designer, or Software Developer, choose your domain in Onboarding.
               </p>
             </div>
           </div>
@@ -436,33 +547,21 @@ export default function DashboardOverviewPage() {
               2
             </div>
             <div>
-              <h4 className="font-bold text-emerald-950">View & Download Your Agency-Standard CV</h4>
+              <h4 className="font-bold text-emerald-950">Groq AI Profile Analysis</h4>
               <p className="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
-                Head to the <strong>AI Tailor Studio</strong> or click &quot;Print / Save PDF&quot; to export your formatted CV styled exactly like top software agencies (InvoZone, Turing, Toptal).
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3 rounded-xl bg-blue-50/60 p-3 border border-blue-100">
-            <div className="h-6 w-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
-              3
-            </div>
-            <div>
-              <h4 className="font-bold text-blue-950">1-Click Live Search on LinkedIn & Google Jobs</h4>
-              <p className="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
-                Click the <strong>LinkedIn Jobs</strong> or <strong>Google Jobs</strong> buttons to automatically query live postings matching your calibrated title and city.
+                Review your dynamic score and field-tailored recommendations generated by Groq AI.
               </p>
             </div>
           </div>
 
           <div className="flex items-start gap-3 rounded-xl bg-violet-50/60 p-3 border border-violet-100">
             <div className="h-6 w-6 rounded-full bg-violet-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
-              4
+              3
             </div>
             <div>
-              <h4 className="font-bold text-violet-950">Tailor for Any Specific Company</h4>
+              <h4 className="font-bold text-violet-950">Tailored Resume Generation</h4>
               <p className="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
-                Paste any job description to generate high-response cover letters and recruiter intro emails in 1 second with Groq AI.
+                Generate and print resumes customized specifically for your profile and target company.
               </p>
             </div>
           </div>
@@ -472,9 +571,9 @@ export default function DashboardOverviewPage() {
               type="button"
               variant="primary"
               onClick={() => setGuideModalOpen(false)}
-              className="rounded-xl bg-indigo-600 text-xs font-bold"
+              className="rounded-xl bg-indigo-600 text-xs font-bold text-white"
             >
-              Ready to Explore
+              Close
             </Button>
           </div>
         </div>
