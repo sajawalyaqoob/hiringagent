@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
-    "build": "next build --webpack",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint .",
     "test": "npx tsx tests/e2e-suite.test.ts && npx tsx tests/groq-and-generation.test.ts"
@@ -12,9 +12,9 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",
-    "next": "*",
-    "react": "*",
-    "react-dom": "*",
+    "next": "16.3.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "tailwind-merge": "^3.5.0",
     "zod": "^3.25.7",
     "@supabase/supabase-js": "^2.49.1",
@@ -26,7 +26,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "*",
+    "eslint-config-next": "16.3.4",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
